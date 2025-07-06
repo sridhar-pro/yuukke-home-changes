@@ -1,0 +1,64 @@
+@import url("https://fonts.googleapis.com/css2?family=Domine:wght@400..700&display=swap");
+
+@import "tailwindcss";
+@tailwind utilities;
+
+/* Base font and box model */
+* {
+  font-family: "Domine", serif;
+  box-sizing: border-box;
+}
+
+/* Theme variables — universal light mode */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary-color: #a00030;
+}
+
+/* Base body styles */
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden; /* Disable horizontal scroll */
+  margin: 0;
+  padding: 0;
+}
+
+/* Prevent overflow at root level */
+html {
+  overflow-x: hidden;
+}
+
+/* Scrollbar hiding utility (cross-browser) */
+.scrollbar-hide,
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Shimmer animation (for loaders or skeletons) */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  background-image: linear-gradient(
+    90deg,
+    rgba(243, 244, 246, 0.3) 0%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(243, 244, 246, 0.3) 100%
+  );
+}
