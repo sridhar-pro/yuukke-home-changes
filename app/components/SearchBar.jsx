@@ -36,7 +36,6 @@ const SearchBar = () => {
             page: 1,
             query: searchTerm,
             limit: 10,
-            gifts_products: 1,
           },
         },
         {
@@ -87,12 +86,12 @@ const SearchBar = () => {
           className="p-2 hover:bg-gray-100 rounded-full transition"
           aria-label="Open Search"
         >
-          <Search className="w-3 md:w-5 h-3 md:h-5 text-black cursor-pointer" />
+          <Search className="w-5 md:w-5 h-5 md:h-5 text-black cursor-pointer" />
         </button>
       ) : (
         <div className="flex items-center border rounded-full px-4 py-2 bg-white shadow-md transition-all w-[200px] md:w-[400px] max-w-full">
           <Search className="w-5 h-5 text-gray-400 mr-2" />
-          <X className="w-5 h-5 z-50" />
+
           <input
             type="text"
             value={query}
@@ -108,9 +107,11 @@ const SearchBar = () => {
               setIsActive(false);
               setShowDropdown(false);
             }}
-            className="text-gray-400 hover:text-gray-600 transition"
+            className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
             aria-label="Close Search"
-          ></button>
+          >
+            <X className="hidden md:flex w-5 h-5 z-50" />
+          </button>
         </div>
       )}
 

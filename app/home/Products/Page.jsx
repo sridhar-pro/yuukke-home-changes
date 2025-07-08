@@ -1001,7 +1001,7 @@ const FeaturedProducts = () => {
                             {isAdding ? "Adding..." : "Add to Cart"}
                           </span>
                           <span
-                            className="absolute left-0 top-0 h-full w-0 bg-black transition-all duration-300 ease-in-out group-hover:w-full z-[1] rounded-xl"
+                            className="absolute left-0 top-0 h-full w-0 bg-black transition-all duration-[900ms] ease-in-out group-hover:w-full z-[1] rounded-xl"
                             style={{
                               transitionProperty: "width, background-color",
                               willChange: "width",

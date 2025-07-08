@@ -12,14 +12,11 @@ import {
   RefreshCw,
   Info,
   IndianRupee,
-  Percent,
   CreditCard,
   ShieldCheck,
   Store,
   Package,
   MapPin,
-  Minus,
-  Plus,
   ChevronDown,
   Undo2,
   BadgeCheck,
@@ -32,7 +29,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useAuth } from "@/app/components/AuthContext";
+import { useAuth } from "@/app/utils/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   containerVariants,
@@ -51,6 +48,8 @@ export default function ProductPage() {
 
   const [showPopup, setShowPopup] = useState(false);
   const [pincode, setPincode] = useState("600001");
+  const [city, setCity] = useState("Chennai"); // default city
+  const [locationUpdated, setLocationUpdated] = useState(false);
 
   const handleUpdate = () => {
     setShowPopup(true);
@@ -60,11 +59,66 @@ export default function ProductPage() {
     setShowPopup(false);
   };
 
-  const handleSave = () => {
-    if (pincode.trim().length === 6) {
-      setShowPopup(false);
-    } else {
-      alert("Please enter a valid 6-digit pincode!");
+  const handleSave = async (retry = false) => {
+    if (pincode.length !== 6 || isNaN(pincode)) {
+      toast.error("Please enter a valid 6-digit pincode");
+      return;
+    }
+
+    const toastId = toast.loading("Validating pincode...");
+
+    try {
+      const token = await getValidToken();
+      if (!token) {
+        if (!retry) {
+          localStorage.removeItem("authToken");
+          await login(); // 👈 implement your login logic
+          toast.dismiss(toastId);
+          return handleSave(true); // 🔁 retry once
+        } else {
+          throw new Error("Authentication failed");
+        }
+      }
+
+      const res = await fetch("/api/pincode", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pincode, country: "IN" }),
+      });
+
+      const data = await res.json();
+      const result = data?.data?.data;
+
+      if (result?.pincode && result?.country === "IN" && result?.city) {
+        setCity(result.city); // ✅ dynamically set city from API
+        setShowPopup(false);
+        setLocationUpdated(true); // ✅ mark update
+
+        toast.update(toastId, {
+          render: "Location updated successfully!",
+          type: "success",
+          isLoading: false,
+          autoClose: 2000,
+        });
+      } else {
+        toast.update(toastId, {
+          render: "Invalid pincode or city not found.",
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
+      }
+    } catch (err) {
+      console.error("Error validating pincode:", err);
+      toast.update(toastId, {
+        render: err.message || "Something went wrong while fetching city.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
     }
   };
 
@@ -239,24 +293,31 @@ export default function ProductPage() {
         const p = data.data[0];
 
         setProduct({
-          id: p.p_id,
-          name: p.p_name,
+          id: p.id,
+          name: p.name,
           description: p.product_details || "No description available",
           cost: parseFloat(p.cost.replace(/,/g, "")) || 0,
           price: parseFloat(p.price.replace(/,/g, "")) || 0,
           promo_price: parseFloat(p.price.replace(/,/g, "")) || 0,
-          quantity: p.p_quantity,
-          review: p.p_rating,
-          review_count: p.p_review_count,
+          promo_tag: p.promo_tag,
+          quantity: p.quantity,
+          review: p.review,
+          review_count: p.review,
           category: p.category,
-          brand: p.p_brand,
-          weight: p.p_weight,
-          dimensions: p.p_dimensions,
+          brand: p.brand,
+          weight: p.weight,
+          dimensions: p.dimensions,
           image: p.p_image || "/placeholder-product.jpg",
           image_g: p.product_image || [],
           store_details: p.store_details || [],
           sellerproduct: p.sellerproduct || [],
           related_items: p.related_items || [],
+          seller: p.seller || {},
+          length: p.length || 0,
+          width: p.width || 0,
+          height: p.height || 0,
+          weight: p.weight || 0,
+          product_returnable: p.product_returnable,
         });
 
         setSelectedImage(p.p_image || "/placeholder-product.jpg");
@@ -596,11 +657,7 @@ export default function ProductPage() {
                 >
                   <Image
                     src={selectedImage || product.image}
-                    alt={
-                      product.name
-                        ? `${product.name} product image`
-                        : "Product image"
-                    }
+                    alt={product?.name || "Product image"}
                     fill
                     className="object-contain"
                     priority
@@ -641,12 +698,14 @@ export default function ProductPage() {
               <div className="lg:hidden px-4 mt-4 mb-4">
                 {/* Product Name & Category */}
                 <div>
-                  <div className="mb-1 md:mb-2">
-                    <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2  py-[2px]  rounded-tl-lg rounded-br-lg shadow-md">
-                      <Clock className="w-4 h-4 text-white" />
-                      Limited time offer
-                    </span>
-                  </div>
+                  {product.promo_tag && (
+                    <div className="mb-1 md:mb-2">
+                      <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2 py-[2px] rounded-tl-lg rounded-br-lg shadow-md">
+                        <Clock className="w-4 h-4 text-white" />
+                        {product.promo_tag}
+                      </span>
+                    </div>
+                  )}
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 uppercase">
                     {product.name}
                   </h1>
@@ -713,29 +772,29 @@ export default function ProductPage() {
             <div className="space-y-6">
               {/* Viewer Count */}
               <div className="hidden md:flex items-center gap-2 text-sm text-gray-600 mb-2">
-                <div className="flex items-center">
-                  <div className="flex mr-2">
-                    <Eye className="w-4 h-4 text-[#A00300]" />
-                  </div>
+                <div className="flex items-center gap-1">
+                  <Eye className="w-4 h-4 text-[#A00300]" />
                   <span className="font-medium">
                     {viewerCount}{" "}
                     {viewerCount === 1 ? "person is" : "people are"} currently
                     looking at this product!
+                    <span className="text-xs text-gray-400 ml-2">
+                      (Updated {lastUpdated})
+                    </span>
                   </span>
                 </div>
-                <span className="text-xs text-gray-400">
-                  (Updated {lastUpdated})
-                </span>
               </div>
 
               {/* Product Name & Category */}
               <div className="">
-                <div className="mb-1 md:mb-2">
-                  <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2  py-[2px]  rounded-tl-lg rounded-br-lg shadow-md">
-                    <Clock className="w-4 h-4 text-white" />
-                    Limited time offer
-                  </span>
-                </div>
+                {product.promo_tag && (
+                  <div className="mb-1 md:mb-2">
+                    <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2 py-[2px] rounded-tl-lg rounded-br-lg shadow-md">
+                      <Clock className="w-4 h-4 text-white" />
+                      {product.promo_tag}
+                    </span>
+                  </div>
+                )}
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 uppercase hidden md:flex">
                   {product.name}
                 </h1>
@@ -789,12 +848,22 @@ export default function ProductPage() {
               </div>
 
               {/* Highlights */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div
+                className={`grid gap-4 mt-6 ${
+                  product.product_returnable?.toLowerCase() === "yes"
+                    ? "grid-cols-1 sm:grid-cols-3"
+                    : "grid-cols-1 sm:grid-cols-2"
+                }`}
+              >
                 {[
-                  {
-                    icon: <Undo2 className="w-6 h-6 text-[#A00300]" />,
-                    title: "Easy Returns",
-                  },
+                  ...(product.product_returnable?.toLowerCase() === "yes"
+                    ? [
+                        {
+                          icon: <Undo2 className="w-6 h-6 text-[#A00300]" />,
+                          title: "Easy Returns",
+                        },
+                      ]
+                    : []),
                   {
                     icon: <BadgeCheck className="w-6 h-6 text-[#A00300]" />,
                     title: "High Quality",
@@ -814,6 +883,29 @@ export default function ProductPage() {
                     </p>
                   </div>
                 ))}
+              </div>
+
+              <div className="border border-gray-200 mb-6 rounded-lg overflow-hidden">
+                <table className="min-w-full text-sm text-left text-gray-900">
+                  <tbody>
+                    <tr className="border-b border-gray-200">
+                      <th className="px-4 py-2 font-semibold bg-gray-50 w-1/3">
+                        Dimension
+                      </th>
+                      <td className="px-4 py-2">
+                        Length - {Math.floor(product.length) ?? "N/A"} cm |
+                        Width - {Math.floor(product.width) ?? "N/A"} cm | Height
+                        - {Math.floor(product.height) ?? "N/A"} cm
+                      </td>
+                    </tr>
+                    <tr>
+                      <th className="px-4 py-2 font-semibold bg-gray-50">
+                        Weight
+                      </th>
+                      <td className="px-4 py-2">{product.weight} kg</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
               {/* Description */}
@@ -911,7 +1003,7 @@ export default function ProductPage() {
                         "Seller Information"}
                     </h4>
 
-                    {product.review > 0 && (
+                    {/* {product.review > 0 && (
                       <div className="flex items-center justify-center mb-2">
                         <div className="flex items-center mr-2">
                           {[...Array(5)].map((_, i) => (
@@ -930,7 +1022,7 @@ export default function ProductPage() {
                           {product.review_count || 0} reviews)
                         </span>
                       </div>
-                    )}
+                    )} */}
 
                     {product.store_details?.[0]?.address && (
                       <div className="text-sm text-gray-600 mt-2">
@@ -943,14 +1035,33 @@ export default function ProductPage() {
                       </div>
                     )}
 
-                    {product.store_details?.[0]?.verify === "1" && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
-                        <ShieldCheck className="w-5 h-5 mr-2 text-green-500" />
-                        <span className="text-sm font-medium text-green-600">
-                          Verified Seller
-                        </span>
-                      </div>
-                    )}
+                    {(() => {
+                      const type = product.seller?.business_type;
+
+                      if (type === "2") {
+                        return (
+                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
+                            <ShieldCheck className="w-5 h-5 mr-2 text-green-500" />
+                            <span className="text-sm font-medium text-green-600">
+                              Verified Seller
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      if (type === "3") {
+                        return (
+                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
+                            <ShieldCheck className="w-5 h-5 mr-2 text-[#A00300]" />
+                            <span className="text-sm font-medium text-[#A00300]">
+                              Premium Seller
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1000,9 +1111,8 @@ export default function ProductPage() {
                             </h4>
 
                             <div className="flex items-center gap-1 text-sm text-gray-800 mt-auto">
-                              <IndianRupee className="w-4 h-4 text-gray-600" />
+                              <IndianRupee className="w-4 h-4 text-[#A00300]" />
                               <span className="font-semibold text-[#A00300]">
-                                ₹
                                 {Number(
                                   item.promo_price !== null &&
                                     item.promo_price !== undefined
@@ -1015,7 +1125,7 @@ export default function ProductPage() {
                                 item.promo_price !== undefined &&
                                 item.price > item.promo_price && (
                                   <span className="text-xs text-gray-400 line-through ml-1">
-                                    ₹{Number(item.price).toFixed(2)}
+                                    {Number(item.price).toFixed(2)}
                                   </span>
                                 )}
                             </div>
@@ -1038,10 +1148,9 @@ export default function ProductPage() {
           <div className="space-y-6">
             {/* 🔢 Quantity Selector */}
             <div className="flex items-center gap-3">
-              <span className="text-lg  font-medium whitespace-nowrap uppercase italic text-[#A00300]">
+              <span className="text-lg text-[#A00300] font-medium uppercase">
                 Quantity:
               </span>
-
               <div className="relative w-20">
                 <select
                   value={quantity}
@@ -1096,6 +1205,7 @@ export default function ProductPage() {
                 </button>
 
                 {/* Buy Now */}
+
                 <button
                   onClick={handleBuyNow}
                   className={`group relative w-full overflow-hidden rounded-lg py-3 px-4 font-bold shadow-none border border-white transition-all duration-300 ease-in-out hover:border-transparent cursor-pointer`}
@@ -1139,7 +1249,15 @@ export default function ProductPage() {
                     Update Location
                   </button>
                 </div>
-                <p className="text-sm text-gray-900 mt-1">Chennai {pincode}</p>
+                <p
+                  className={`text-sm mt-1 ${
+                    locationUpdated
+                      ? "text-green-700 font-semibold"
+                      : "text-gray-900"
+                  }`}
+                >
+                  {city} {pincode}
+                </p>
               </div>
 
               {/* 📦 Pincode Popup */}
@@ -1254,16 +1372,10 @@ export default function ProductPage() {
                     className="relative group flex flex-col transition"
                     style={{ height: "100%" }}
                   >
-                    {/* Business Type Badges */}
-                    {item.business_type === "3" && (
-                      <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
+                    {/* Premium Badge */}
+                    {item.is_premium && (
+                      <span className="absolute top-2 left-2 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-[10px] font-bold px-2 py-[2px] rounded-tl-lg rounded-br-lg z-10">
                         Premium
-                      </span>
-                    )}
-
-                    {item.business_type === "2" && (
-                      <span className="absolute top-2 left-2 bg-green-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
-                        Verified
                       </span>
                     )}
 

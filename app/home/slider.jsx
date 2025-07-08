@@ -9,36 +9,23 @@ export function ImagesSliderDemo() {
   const [desktopImages, setDesktopImages] = useState([]);
   const [mobileImages, setMobileImages] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isMobile, setIsMobile] = useState(null); // Start as null
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // default immediately
   const [loading, setLoading] = useState(true);
-  const [fetchAttempted, setFetchAttempted] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const hasFetched = useRef(false);
-
   const baseUrl = "https://marketplace.yuukke.com/assets/uploads/";
 
-  // Determine screen type before fetch
+  // Immediately fetch images on mount
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize(); // Detect on mount
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Fetch only when screen size is known
-  useEffect(() => {
-    if (hasFetched.current || fetchAttempted || isMobile === null) return;
+    if (hasFetched.current) return;
 
     const fetchImages = async () => {
-      setFetchAttempted(true);
+      hasFetched.current = true;
+      setLoading(true);
       try {
-        hasFetched.current = true;
-        setLoading(true);
-
         const endpoint = isMobile ? "/api/mobslider" : "/api/slider";
         const res = await fetch(endpoint);
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error("Failed to fetch");
 
         const data = await res.json();
 
@@ -48,6 +35,7 @@ export function ImagesSliderDemo() {
           title: item.title || "",
         }));
 
+        // Preload images
         await Promise.all(
           formatted.map(
             (img) =>
@@ -60,38 +48,24 @@ export function ImagesSliderDemo() {
           )
         );
 
-        if (isMobile) setMobileImages(formatted);
-        else setDesktopImages(formatted);
-
-        setRetryCount(0);
+        isMobile ? setMobileImages(formatted) : setDesktopImages(formatted);
       } catch (err) {
-        console.error("Fetch error:", err);
-        if (retryCount < 2) {
-          setTimeout(() => {
-            setRetryCount((c) => c + 1);
-            setFetchAttempted(false);
-          }, 1000 * (retryCount + 1));
-        }
+        console.error("Slider fetch error:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    const timer = setTimeout(fetchImages, 100);
-    return () => clearTimeout(timer);
-  }, [fetchAttempted, retryCount, isMobile]);
+    fetchImages();
 
-  // Auto-rotate slides
-  useEffect(() => {
-    const images = isMobile ? mobileImages : desktopImages;
-    if (images.length <= 1) return;
+    const handleResize = () => {
+      const current = window.innerWidth < 768;
+      setIsMobile(current);
+    };
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [isMobile, desktopImages, mobileImages]);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isMobile]);
 
   const images = isMobile ? mobileImages : desktopImages;
 

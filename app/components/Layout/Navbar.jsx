@@ -129,7 +129,7 @@ export default function Navbar() {
         <div className="px-3 flex justify-between items-center mt-0 md:mt-5 mb-0 md:mb-5">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <div className="relative w-[100px] h-[50px] lg:w-[170px] lg:h-[45px]">
+            <div className="relative w-[125px] h-[50px] lg:w-[170px] lg:h-[45px]">
               <Image
                 src="/logo.png"
                 alt="MyGiftBox Logo"
@@ -147,10 +147,13 @@ export default function Navbar() {
             <div className="flex items-center space-x-8">
               {/* Products Dropdown - Updated to use group-hover like ODOP */}
               <div className="relative group">
-                <button className="group transition-all flex items-center gap-1 py-2 px-1 font-medium text-gray-700 hover:text-gray-900">
+                <Link
+                  href="#"
+                  className="group transition-all flex items-center gap-1 py-2 px-1 font-medium text-gray-700 hover:text-gray-900 cursor-pointer"
+                >
                   Products
                   <ChevronDown className="w-4 h-4 mt-0.5 transition-transform duration-200 group-hover:rotate-180" />
-                </button>
+                </Link>
 
                 <div className="absolute left-0 top-full mt-1 w-[42rem] bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-6 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-out">
                   {productCategories.length > 0 ? (
@@ -275,6 +278,7 @@ export default function Navbar() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-4 px-2 py-1">
+              <SearchBar />
               <button
                 aria-label="Profile"
                 onClick={() =>

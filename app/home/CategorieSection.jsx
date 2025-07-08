@@ -87,7 +87,6 @@ const CategoriesSection = () => {
         const token = await getValidToken();
         setLoading(true);
 
-        // console.log("Fetching fresh categories data...");
         const res = await fetch("/api/homeCategory", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -103,16 +102,6 @@ const CategoriesSection = () => {
 
         const data = await res.json();
 
-        // Debug: Log raw API response
-        // console.group("Raw API Response");
-        // console.log("Complete API data:", data);
-        // console.log("First category from API:", data[0]);
-        // console.log(
-        //   "Keys in first category:",
-        //   data[0] ? Object.keys(data[0]) : []
-        // );
-        // console.groupEnd();
-
         // Create mapped version
         const mapped = data?.map((cat) => ({
           name: cat.name,
@@ -121,26 +110,9 @@ const CategoriesSection = () => {
           subcategories: cat.subcategories || [], // Ensure subcategories exists
         }));
 
-        // Debug: Log mapped data before storage
-        // console.group("Data to be stored");
-        // console.log("Mapped data structure:", mapped);
-        // console.log("Sample mapped category:", mapped[0]);
-        // console.log("Sample subcategories:", mapped[0]?.subcategories);
-        // console.groupEnd();
-
         // Store in localStorage
         localStorage.setItem("cachedCategories", JSON.stringify(mapped));
         localStorage.setItem("categoriesTimestamp", Date.now().toString());
-
-        // Verify storage
-        // console.group("Storage Verification");
-        // const storedData = JSON.parse(localStorage.getItem("cachedCategories"));
-        // console.log("Data retrieved from localStorage:", storedData);
-        // console.log(
-        //   "Storage timestamp:",
-        //   localStorage.getItem("categoriesTimestamp")
-        // );
-        // console.groupEnd();
 
         setCategories(mapped);
         setDuplicatedCategories([...mapped, ...mapped]);

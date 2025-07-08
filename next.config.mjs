@@ -85,7 +85,7 @@ const nextConfig = {
       {
         source: "/api/pincode",
         destination:
-          "https://marketplace.betalearnings.com/api/v1/Marketv2/uservalidatepincode",
+          "https://marketplace.yuukke.com/api/v1/Marketv2/uservalidatepincode",
       },
     ];
   },

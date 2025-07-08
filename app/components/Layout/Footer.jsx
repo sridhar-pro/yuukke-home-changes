@@ -188,28 +188,38 @@ export default function Footer() {
                 <img
                   src="/mastercard.png"
                   alt="Mastercard"
-                  className="w-12 h-12 object-contain"
-                />
-                <img
-                  src="/american_express.png"
-                  alt="Amex"
-                  className="w-12 h-12 object-contain"
-                />
-                <img
-                  src="/paypal.png"
-                  alt="PayPal"
-                  className="w-12 h-12 object-contain"
-                />
-                <img
-                  src="/visa.jpg"
-                  alt="Visa"
-                  className="w-12 h-12 object-contain"
+                  className="w-20 h-20 object-contain"
                 />
                 <img
                   src="/maestro.png"
                   alt="Maestro"
-                  className="w-12 h-12 object-contain"
+                  className="w-20 h-20  object-contain"
                 />
+                <img
+                  src="/american_express.png"
+                  alt="Amex"
+                  className="w-20 h-20  object-contain"
+                />
+                <img
+                  src="/paypal.png"
+                  alt="PayPal"
+                  className="w-20 h-20  object-contain"
+                />
+                <img
+                  src="/visa.jpg"
+                  alt="Visa"
+                  className="w-20 h-20  object-contain"
+                />
+                {/* <img
+                  src="/razorpay.png"
+                  alt="Maestro"
+                  className="w-20 h-20  object-contain"
+                />
+                <img
+                  src="/shiprocket.webp"
+                  alt="Maestro"
+                  className="w-20 h-20  object-contain"
+                /> */}
               </div>
             </div>
           </div>

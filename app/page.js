@@ -11,7 +11,10 @@ const WobbleCardDemo = dynamic(
 );
 
 const AnimatedTestimonialsDemo = dynamic(
-  () => import("./home/AnimatedTestimonialsDemo").then((mod) => mod.AnimatedTestimonialsDemo),
+  () =>
+    import("./home/AnimatedTestimonialsDemo").then(
+      (mod) => mod.AnimatedTestimonialsDemo
+    ),
   { suspense: true }
 );
 
@@ -33,13 +36,9 @@ const ImagesSliderDemo = dynamic(
 export default function Home() {
   return (
     <>
-      <LazyLoad fallbackHeight={400}>
-        <ImagesSliderDemo />
-      </LazyLoad>
+      <ImagesSliderDemo />
 
-      <LazyLoad fallbackHeight={400}>
-        <WobbleCardDemo />
-      </LazyLoad>
+      <WobbleCardDemo />
 
       <LazyLoad fallbackHeight={600}>
         <Products />
