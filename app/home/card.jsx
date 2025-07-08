@@ -20,14 +20,14 @@ const slides = [
     description:
       "Reju's Lip Balm hydrates deeply with rose essence and beeswax, offering a soothing, luxurious feel.",
     shortDescription: "Hydrating balm with rose & beeswax.",
-    image: "/sale1.jpg",
+    image: "/sale1.webp",
   },
   {
     title: "Amla Powder",
     description:
       "Made from pure, seedless Amla pulp grown in Rajasthan, this powder nourishes and moisturizes skin and hair with essential fatty acids.",
     shortDescription: "Seedless Amla for skin & hair care.",
-    image: "/sale2.jpeg",
+    image: "/sale2.webp",
   },
   {
     title: "Terracotta By Sachii 3-d Lotus Incense Stick Holder",
@@ -41,14 +41,14 @@ const slides = [
     description:
       "Iniya Organics’ Idli Podi blends tradition and nutrition—a perfect, timeless pairing for idlis.",
     shortDescription: "Flavorful, nutritious mix for idlis.",
-    image: "/sale4.jpeg",
+    image: "/sale4.webp",
   },
   {
     title: "Biji Da Achaar - Paav Bhaji Masala",
     description:
       "Biji Da Achaar’s Pav Bhaji Masala is a rich, aromatic spice mix that transforms your dish with bold, authentic flavors.",
     shortDescription: "Bold masala for your pav bhaji.",
-    image: "/sale5.jpg",
+    image: "/sale5.webp",
   },
 ];
 
