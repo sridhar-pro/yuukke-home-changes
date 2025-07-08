@@ -467,6 +467,15 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
                         </div>
                       </motion.div>
                     ))}
+                    <div className="border-t border-gray-300 pt-6 pb-6">
+                      <h3 className="text-lg font-medium mb-4 px-2 text-gray-900">
+                        You May Also Like
+                      </h3>
+                      <RecommendedProductsSlider
+                        cartItems={cartItems}
+                        setCartItems={setCartItems}
+                      />
+                    </div>
                   </div>
                 ) : (
                   <motion.div
@@ -478,16 +487,6 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
                   </motion.div>
                 )}
               </motion.div>
-
-              <div className="border-t border-gray-300 pt-6 pb-6">
-                <h3 className="text-lg font-medium mb-4 px-2 text-gray-900">
-                  You May Also Like
-                </h3>
-                <RecommendedProductsSlider
-                  cartItems={cartItems}
-                  setCartItems={setCartItems}
-                />
-              </div>
 
               {/* Footer */}
               <div className="border-t border-gray-300 pt-4">

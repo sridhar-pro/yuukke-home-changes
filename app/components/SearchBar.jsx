@@ -128,11 +128,7 @@ const SearchBar = () => {
           {results.map((product) => (
             <div
               key={product.id}
-              onClick={() =>
-                router.push(
-                  `https://marketplace.yuukke.com/product/${product.slug}`
-                )
-              }
+              onClick={() => router.push(`/products/${product.slug}`)}
               className="flex gap-5 items-start p-4 hover:bg-gray-50 cursor-pointer transition border-b last:border-none"
             >
               <img

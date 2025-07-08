@@ -229,7 +229,7 @@ const FeaturedProducts = () => {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 20 }, //30
     visible: {
       opacity: 1,
       y: 0,

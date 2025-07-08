@@ -288,7 +288,7 @@ export default function ProductPage() {
 
         const data = await response.json();
         if (!data?.data?.[0]) throw new Error("Product data not found");
-        console.log("data:", data);
+        // console.log("data:", data);
 
         const p = data.data[0];
 
@@ -435,7 +435,6 @@ export default function ProductPage() {
     if (isAdding || !product?.id) return;
     setIsAdding(true);
 
-    // Optional: mimic network delay for smooth UX
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     try {
@@ -453,49 +452,54 @@ export default function ProductPage() {
         localStorage.getItem("cart_data") || "[]"
       );
 
-      // Step 3: Check if item exists
+      // Step 3: Check if item exists in cart
       const existingItemIndex = existingCart.findIndex(
         (item) => item.id === product.id
       );
 
-      // Step 4: Update or insert item
-      const updatedCart =
-        existingItemIndex >= 0
-          ? existingCart.map((item, i) =>
-              i === existingItemIndex
-                ? { ...item, qty: item.qty + quantity }
-                : item
-            )
-          : [
-              ...existingCart,
-              {
-                id: product.id,
-                name: product.name,
-                qty: quantity,
-                price: product.cost,
-                image: product.image,
-              },
-            ];
+      const maxQty = product.quantity || 0;
 
-      // Step 5: Save updated cart
+      // Step 4: Validate quantity
+      if (quantity > maxQty) {
+        toast.error(`Only ${maxQty} items available in stock.`);
+        setIsAdding(false);
+        return;
+      }
+
+      // Step 5: Update or insert item (replace qty, not add)
+      let updatedCart;
+      if (existingItemIndex >= 0) {
+        updatedCart = existingCart.map((item, i) =>
+          i === existingItemIndex
+            ? { ...item, qty: quantity } // 👈 REPLACEMENT instead of +=
+            : item
+        );
+      } else {
+        updatedCart = [
+          ...existingCart,
+          {
+            id: product.id,
+            name: product.name,
+            qty: quantity,
+            price: product.cost,
+            image: product.image,
+          },
+        ];
+      }
+
+      // Step 6: Save updated cart
       localStorage.setItem("cart_data", JSON.stringify(updatedCart));
       setCartItems(updatedCart);
 
-      // 🪄 If you have a quick view context, close it (optional)
       if (typeof setQuickViewProduct === "function") {
         setQuickViewProduct(null);
       }
 
-      // ✨ Open cart sidebar
       if (typeof setIsCartOpen === "function") {
         setIsCartOpen(true);
       }
 
-      // 🔗 Simulated redirect link in console
       const encodedSlug = encodeURIComponent(product.slug || product.id);
-      console.log(
-        `🛒 Product added to cart! You can view it at: /cart?added=${encodedSlug}`
-      );
 
       toast.success("🎉 Product added to cart!");
     } catch (error) {
@@ -1146,31 +1150,34 @@ export default function ProductPage() {
           className="w-full lg:w-[25%] bg-white px-4 py-6 border-t lg:border-t-0 lg:border-l border-gray-100 order-2 lg:order-3"
         >
           <div className="space-y-6">
-            {/* 🔢 Quantity Selector */}
             <div className="flex items-center gap-3">
               <span className="text-lg text-[#A00300] font-medium uppercase">
                 Quantity:
               </span>
-              <div className="relative w-20">
+              <div className="relative w-24">
                 <select
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="appearance-none w-full py-1 px-3 pr-6 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#A00300] focus:border-[#A00300] bg-white cursor-pointer"
+                  className="appearance-none w-full py-1 px-3 pr-6 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-[#A00300] focus:border-[#A00300] bg-white cursor-pointer max-h-[200px] scrollbar-hide overflow-y-auto"
                 >
-                  {[...Array(Math.min(10, product.quantity || 10)).keys()].map(
-                    (i) => (
-                      <option
-                        key={i + 1}
-                        value={i + 1}
-                        disabled={i + 1 > (product.quantity || 0)}
-                        className={
-                          i + 1 > (product.quantity || 0) ? "text-gray-400" : ""
-                        }
-                      >
-                        {i + 1}
-                      </option>
-                    )
-                  )}
+                  {[
+                    ...Array(
+                      Number(product.quantity) > 0
+                        ? Number(product.quantity)
+                        : 1
+                    ).keys(),
+                  ].map((i) => (
+                    <option
+                      key={i + 1}
+                      value={i + 1}
+                      disabled={i + 1 > Number(product.quantity)}
+                      className={
+                        i + 1 > Number(product.quantity) ? "text-gray-400 " : ""
+                      }
+                    >
+                      {i + 1}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="w-3 h-3 absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
               </div>

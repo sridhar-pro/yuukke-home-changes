@@ -40,9 +40,7 @@ export default function Home() {
 
       <WobbleCardDemo />
 
-      <LazyLoad fallbackHeight={600}>
-        <Products />
-      </LazyLoad>
+      <Products />
 
       <LazyLoad fallbackHeight={300}>
         <AnimatedTestimonialsDemo />
