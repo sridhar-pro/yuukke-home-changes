@@ -319,7 +319,7 @@ const FeaturedProducts = () => {
             ? Number(product.sale_price)
             : Number(product.price);
           const review = Number(product.review);
-          const originalPrice = Number(product.cost);
+          const originalPrice = Number(product.price);
           const discountPercent = hasPromo
             ? Math.round(((originalPrice - promoPrice) / originalPrice) * 100)
             : 0;
@@ -794,7 +794,6 @@ const FeaturedProducts = () => {
 
                     <div className="mb-3 md:mb-4">
                       {quickViewProduct?.promo_price ||
-                      quickViewProduct?.sale_price ||
                       quickViewProduct?.price ? (
                         <>
                           {/* Final price (Promo or fallback) */}
@@ -802,29 +801,28 @@ const FeaturedProducts = () => {
                             ₹
                             {Number(
                               quickViewProduct.promo_price ||
-                                quickViewProduct.sale_price ||
                                 quickViewProduct.price
                             ).toFixed(2)}
                           </span>
 
                           {/* Strike out cost or original price */}
                           {quickViewProduct.promo_price &&
-                            quickViewProduct.cost && (
+                            quickViewProduct.price && (
                               <span className="ml-2 sm:ml-4 text-lg sm:text-xl text-gray-400 line-through">
-                                ₹{Number(quickViewProduct.cost).toFixed(2)}
+                                ₹{Number(quickViewProduct.price).toFixed(2)}
                               </span>
                             )}
 
                           {/* Show offer percentage */}
                           {quickViewProduct.promo_price &&
-                            quickViewProduct.cost &&
-                            quickViewProduct.cost >
+                            quickViewProduct.price &&
+                            quickViewProduct.price >
                               quickViewProduct.promo_price && (
                               <span className="ml-2 sm:ml-4 text-sm sm:text-base text-red-600 font-semibold">
                                 {Math.round(
-                                  ((quickViewProduct.cost -
+                                  ((quickViewProduct.price -
                                     quickViewProduct.promo_price) /
-                                    quickViewProduct.cost) *
+                                    quickViewProduct.price) *
                                     100
                                 )}
                                 % OFF

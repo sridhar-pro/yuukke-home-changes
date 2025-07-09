@@ -8,6 +8,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Check,
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
 import Link from "next/link";
@@ -86,7 +87,7 @@ const AllProductsPage = () => {
     const fetchCategories = async () => {
       try {
         const data = await fetchWithAuth("/api/homeCategory");
-        console.log("📦 Category Data:", data);
+        // console.log("📦 Category Data:", data);
 
         if (Array.isArray(data)) {
           setCategories(data);
@@ -149,6 +150,7 @@ const AllProductsPage = () => {
       });
 
       const result = await response.json();
+      console.log("data ->", result);
 
       if (result?.products) {
         setProducts(result.products);
@@ -170,139 +172,250 @@ const AllProductsPage = () => {
           <h2 className="text-2xl font-bold mb-6 uppercase">Filter products</h2>
 
           {/* Availability Filter */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3">Availability</h3>
-            <label className="flex items-center gap-2 text-sm text-gray-700">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mb-6"
+          >
+            <h3 className="text-lg font-semibold mb-3 text-gray-900">
+              Availability
+            </h3>
+
+            <motion.label
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="group flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-gray-50 to-gray-100 hover:from-[#A00300]/5 hover:to-[#D44A47]/5 cursor-pointer transition-all duration-300 border border-gray-200 hover:border-[#A00300]/30 shadow-sm hover:shadow-md"
+            >
+              {/* Hidden Input */}
               <input
                 type="checkbox"
-                className="accent-[#A00300]"
+                className="sr-only"
                 checked={inStockOnly}
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setInStockOnly(checked);
-                  fetchProductsByCategory(null, minPrice, maxPrice, checked); // 👈 pass updated `inStock`
+                  fetchProductsByCategory(null, minPrice, maxPrice, checked); // 👈 keeping same logic
                 }}
               />
-              In Stock Only
-            </label>
-          </div>
+
+              {/* Custom Checkbox UI */}
+              <div
+                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                  inStockOnly
+                    ? "bg-gradient-to-br from-[#A00300] to-[#D44A47] border-[#A00300] shadow-lg"
+                    : "border-gray-300 bg-white group-hover:border-[#A00300]/50"
+                }`}
+              >
+                <AnimatePresence>
+                  {inStockOnly && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Check className="h-4 w-4 text-white" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Label Text */}
+              <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                In Stock Only
+              </span>
+            </motion.label>
+          </motion.div>
 
           {/* Categories */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
             className="mb-10"
           >
             <h3 className="text-xl font-semibold mb-6 text-gray-900">
               Shop by Category
             </h3>
 
-            <div className="flex flex-col space-y-4">
-              {categories.map((cat) => {
+            <div className="flex flex-col space-y-3">
+              {categories.map((cat, index) => {
                 const isSelected = selectedCategory === cat.id;
 
                 return (
                   <motion.div
                     key={cat.id}
                     layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="bg-gray-50 rounded-2xl shadow-sm"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="relative group"
                   >
-                    <button
-                      onClick={() => {
-                        setSelectedCategory(isSelected ? null : cat.id);
-                        setSelectedSubcategory(null);
-                        fetchProductsByCategory(cat.id, minPrice, maxPrice);
-                      }}
-                      className={`w-full flex justify-between items-center px-5 py-4 text-left transition rounded-2xl ${
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#A00300]/10 to-[#D44A47]/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                    <div
+                      className={`relative bg-white rounded-2xl shadow-sm border transition-all duration-300 ${
                         isSelected
-                          ? "bg-[#A00300] text-white"
-                          : "hover:bg-gray-100 text-gray-800"
+                          ? "border-[#A00300]/30 shadow-lg shadow-[#A00300]/20"
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-md"
                       }`}
                     >
-                      <span className="text-base font-medium">{cat.name}</span>
-                      <ChevronDown
-                        className={`h-5 w-5 transform transition-transform duration-200 ${
-                          isSelected ? "rotate-180" : ""
+                      <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => {
+                          setSelectedCategory(isSelected ? null : cat.id);
+                          setSelectedSubcategory(null);
+                          fetchProductsByCategory(cat.id, minPrice, maxPrice);
+                        }}
+                        className={`w-full flex justify-between items-center px-6 py-5 text-left transition-all duration-300 rounded-2xl ${
+                          isSelected
+                            ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white shadow-lg"
+                            : "hover:bg-gray-50 text-gray-800"
                         }`}
-                      />
-                    </button>
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                              isSelected ? "bg-white" : "bg-[#A00300]"
+                            }`}
+                          ></div>
+                          <span className="text-base font-medium">
+                            {cat.name}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={`h-5 w-5 transform transition-transform duration-300 ${
+                            isSelected ? "rotate-180" : ""
+                          }`}
+                        />
+                      </motion.button>
 
-                    <AnimatePresence>
-                      {isSelected && cat.subcategories?.length > 0 && (
-                        <motion.ul
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="overflow-hidden px-5 pb-4 pt-1 space-y-2"
-                        >
-                          {cat.subcategories.map((sub) => {
-                            const isSubSelected =
-                              selectedSubcategory === sub.id;
+                      <AnimatePresence>
+                        {isSelected && cat.subcategories?.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-6 pb-5 pt-2">
+                              <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-4"></div>
+                              <ul className="space-y-2">
+                                {cat.subcategories.map((sub, subIndex) => {
+                                  const isSubSelected =
+                                    selectedSubcategory === sub.id;
 
-                            return (
-                              <li key={sub.id}>
-                                <button
-                                  onClick={() =>
-                                    setSelectedSubcategory(
-                                      isSubSelected ? null : sub.id
-                                    )
-                                  }
-                                  className={`flex items-center justify-between w-full px-4 py-2 rounded-lg text-sm font-medium transition ${
-                                    isSubSelected
-                                      ? "bg-gray-100 text-[#A00300]"
-                                      : "hover:bg-gray-100 text-gray-700"
-                                  }`}
-                                >
-                                  <span>↳ {sub.name}</span>
-                                  {sub.sub_subcategories?.length > 0 && (
-                                    <ChevronDown
-                                      className={`h-4 w-4 transform transition-transform duration-200 ${
-                                        isSubSelected ? "rotate-180" : ""
-                                      }`}
-                                    />
-                                  )}
-                                </button>
-
-                                {/* Sub-subcategories */}
-                                <AnimatePresence>
-                                  {isSubSelected &&
-                                    sub.sub_subcategories?.length > 0 && (
-                                      <motion.ul
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "auto", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="pl-6 mt-2 space-y-1"
+                                  return (
+                                    <motion.li
+                                      key={sub.id}
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{
+                                        duration: 0.2,
+                                        delay: subIndex * 0.05,
+                                      }}
+                                    >
+                                      <motion.button
+                                        whileHover={{ scale: 1.02, x: 4 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() =>
+                                          setSelectedSubcategory(
+                                            isSubSelected ? null : sub.id
+                                          )
+                                        }
+                                        className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                                          isSubSelected
+                                            ? "bg-gradient-to-r from-[#A00300]/10 to-[#D44A47]/10 text-[#A00300] border border-[#A00300]/20"
+                                            : "hover:bg-gray-100 text-gray-700 border border-transparent"
+                                        }`}
                                       >
-                                        {sub.sub_subcategories.map((subsub) => (
-                                          <li
-                                            key={subsub.id}
-                                            onClick={() =>
-                                              console.log(
-                                                "Sub-sub selected:",
-                                                subsub.slug
-                                              )
-                                            }
-                                            className="text-sm text-gray-600 hover:text-[#A00300] cursor-pointer transition"
-                                          >
-                                            • {subsub.name}
-                                          </li>
-                                        ))}
-                                      </motion.ul>
-                                    )}
-                                </AnimatePresence>
-                              </li>
-                            );
-                          })}
-                        </motion.ul>
-                      )}
-                    </AnimatePresence>
+                                        <div className="flex items-center gap-3">
+                                          <div
+                                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                              isSubSelected
+                                                ? "bg-[#A00300]"
+                                                : "bg-gray-400"
+                                            }`}
+                                          ></div>
+                                          <span>{sub.name}</span>
+                                        </div>
+                                        {sub.sub_subcategories?.length > 0 && (
+                                          <ChevronDown
+                                            className={`h-4 w-4 transform transition-transform duration-300 ${
+                                              isSubSelected ? "rotate-180" : ""
+                                            }`}
+                                          />
+                                        )}
+                                      </motion.button>
+
+                                      <AnimatePresence>
+                                        {isSubSelected &&
+                                          sub.sub_subcategories?.length > 0 && (
+                                            <motion.ul
+                                              initial={{
+                                                height: 0,
+                                                opacity: 0,
+                                              }}
+                                              animate={{
+                                                height: "auto",
+                                                opacity: 1,
+                                              }}
+                                              exit={{ height: 0, opacity: 0 }}
+                                              transition={{ duration: 0.3 }}
+                                              className="pl-8 mt-2 space-y-2"
+                                            >
+                                              {sub.sub_subcategories.map(
+                                                (subsub, subsubIndex) => (
+                                                  <motion.li
+                                                    key={subsub.id}
+                                                    initial={{
+                                                      opacity: 0,
+                                                      x: -10,
+                                                    }}
+                                                    animate={{
+                                                      opacity: 1,
+                                                      x: 0,
+                                                    }}
+                                                    transition={{
+                                                      duration: 0.2,
+                                                      delay: subsubIndex * 0.03,
+                                                    }}
+                                                  >
+                                                    <motion.button
+                                                      whileHover={{
+                                                        scale: 1.02,
+                                                        x: 2,
+                                                      }}
+                                                      onClick={() =>
+                                                        console.log(
+                                                          "Sub-sub selected:",
+                                                          subsub.slug
+                                                        )
+                                                      }
+                                                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#A00300] cursor-pointer transition-all duration-300 p-2 rounded-lg hover:bg-gray-50"
+                                                    >
+                                                      <Circle className="h-2 w-2 fill-current" />
+                                                      <span>{subsub.name}</span>
+                                                    </motion.button>
+                                                  </motion.li>
+                                                )
+                                              )}
+                                            </motion.ul>
+                                          )}
+                                      </AnimatePresence>
+                                    </motion.li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </motion.div>
                 );
               })}
@@ -311,31 +424,31 @@ const AllProductsPage = () => {
 
           {/* Price Range (moved lower) */}
           {/* <div className="mb-6 mt-10">
-            <h3 className="text-lg font-semibold mb-3">Price range</h3>
+        <h3 className="text-lg font-semibold mb-3">Price range</h3>
 
-            <div className="flex justify-between text-sm text-gray-600">
-              <div>
-                Min price <br />
-                <input
-                  type="number"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(Number(e.target.value))}
-                  className="w-20 mt-1 p-1 border border-gray-300 rounded text-center"
-                />{" "}
-                ₹
-              </div>
-              <div>
-                Max price <br />
-                <input
-                  type="number"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(Number(e.target.value))}
-                  className="w-20 mt-1 p-1 border border-gray-300 rounded text-center"
-                />{" "}
-                ₹
-              </div>
-            </div>
-          </div> */}
+        <div className="flex justify-between text-sm text-gray-600">
+          <div>
+            Min price <br />
+            <input
+              type="number"
+              value={minPrice}
+              onChange={(e) => setMinPrice(Number(e.target.value))}
+              className="w-20 mt-1 p-1 border border-gray-300 rounded text-center"
+            />{" "}
+            ₹
+          </div>
+          <div>
+            Max price <br />
+            <input
+              type="number"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              className="w-20 mt-1 p-1 border border-gray-300 rounded text-center"
+            />{" "}
+            ₹
+          </div>
+        </div>
+      </div> */}
         </aside>
 
         {/* Main Content */}
@@ -487,6 +600,19 @@ const AllProductsPage = () => {
                         <Heart className="w-4 h-4 text-gray-600" />
                       </button>
 
+                      {product.promo_price !== null &&
+                        product.promo_price !== undefined &&
+                        product.price > product.promo_price && (
+                          <div className="absolute top-2 left-2 bg-red-100 text-red-700 text-[10px] font-bold px-2 py-[2px] rounded z-10">
+                            {Math.round(
+                              ((product.price - product.promo_price) /
+                                product.price) *
+                                100
+                            )}
+                            % OFF
+                          </div>
+                        )}
+
                       {/* Business Type Badges */}
                       {product.business_type === "3" && (
                         <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
@@ -509,9 +635,10 @@ const AllProductsPage = () => {
                     <div className="text-sm font-semibold text-gray-900 truncate">
                       {product.name}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    {/* <div className="text-xs text-gray-500">
                       {product.subtitle || "Healthy Snack"}
-                    </div>
+                    </div> */}
+
                     <div className="flex gap-2 mt-1 items-center">
                       {hasPromo && (
                         <span className="text-sm text-gray-400 line-through">

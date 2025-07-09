@@ -288,7 +288,7 @@ export default function ProductPage() {
 
         const data = await response.json();
         if (!data?.data?.[0]) throw new Error("Product data not found");
-        // console.log("data:", data);
+        console.log("data:", data);
 
         const p = data.data[0];
 
@@ -296,9 +296,12 @@ export default function ProductPage() {
           id: p.id,
           name: p.name,
           description: p.product_details || "No description available",
-          cost: parseFloat(p.cost.replace(/,/g, "")) || 0,
-          price: parseFloat(p.price.replace(/,/g, "")) || 0,
-          promo_price: parseFloat(p.price.replace(/,/g, "")) || 0,
+          cost: parseFloat((p.cost ?? "0").toString().replace(/,/g, "")) || 0,
+          price: parseFloat((p.price ?? "0").toString().replace(/,/g, "")) || 0,
+          promo_price:
+            parseFloat((p.promo_price ?? "0").toString().replace(/,/g, "")) ||
+            0,
+
           promo_tag: p.promo_tag,
           quantity: p.quantity,
           review: p.review,
@@ -318,6 +321,8 @@ export default function ProductPage() {
           height: p.height || 0,
           weight: p.weight || 0,
           product_returnable: p.product_returnable,
+          minimum_order_qty: p.minimum_order_qty,
+          minimum_order_limit: p.minimum_order_limit,
         });
 
         setSelectedImage(p.p_image || "/placeholder-product.jpg");
@@ -418,7 +423,18 @@ export default function ProductPage() {
         });
         window.location.href = result.redirect_link;
       } else {
-        throw new Error("No redirect link received from server");
+        // Server responded but no redirect link
+        const errorMessage =
+          result?.errors?.length > 0
+            ? result.errors.join(", ")
+            : "Something went wrong. Please try again.";
+
+        toast.update(toastId, {
+          render: errorMessage,
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
       }
     } catch (err) {
       console.error("Buy now error:", err);
@@ -803,6 +819,18 @@ export default function ProductPage() {
                   {product.name}
                 </h1>
 
+                {Number(product.minimum_order_limit) === 1 &&
+                  Number(product.minimum_order_qty) > 0 && (
+                    <div className="mb-1 md:mb-2">
+                      <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#ad0000] to-[#e30f00] text-white text-sm font-bold px-2 py-[2px] rounded-tr-lg rounded-bl-lg shadow-md">
+                        <span className="text-white font-semibold capitalize">
+                          minimum order quantity:
+                        </span>
+                        {product.minimum_order_qty}
+                      </span>
+                    </div>
+                  )}
+
                 {product.category && (
                   <div className="mt-2 items-center gap-2 hidden md:flex">
                     <span className="text-sm font-medium text-gray-500 uppercase">
@@ -821,34 +849,40 @@ export default function ProductPage() {
                   <div className="flex items-baseline gap-1">
                     <IndianRupee className="w-6 h-6 text-[#A00300]" />
                     <span className="text-4xl font-bold text-[#A00300]">
-                      {Number(product.price).toFixed(2)}
+                      {Number(product.promo_price) > 0
+                        ? Number(product.promo_price).toFixed(2)
+                        : Number(product.price).toFixed(2)}
                     </span>
                   </div>
 
-                  {product.cost && product.cost > product.price && (
-                    <div className="items-center gap-1 hidden md:flex">
-                      <IndianRupee className="w-4 h-4 text-gray-400" />
-                      <span className="text-xl text-gray-500 line-through">
-                        {Number(product.cost).toFixed(2)}
-                      </span>
-                    </div>
-                  )}
+                  {/* Show original price with strike-through if promo_price exists and is less than price */}
+                  {Number(product.promo_price) > 0 &&
+                    Number(product.promo_price) < Number(product.price) && (
+                      <div className="items-center gap-1 hidden md:flex">
+                        <IndianRupee className="w-4 h-4 text-gray-400" />
+                        <span className="text-xl text-gray-500 line-through">
+                          {Number(product.price).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                 </div>
 
-                {product.cost && product.cost > product.price && (
-                  <div className="hidden md:flex items-center gap-3">
-                    <div className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full">
-                      <span className="font-medium">
-                        {Math.round(
-                          ((Number(product.cost) - Number(product.price)) /
-                            Number(product.cost)) *
-                            100
-                        )}
-                        % OFF
-                      </span>
+                {Number(product.promo_price) > 0 &&
+                  Number(product.promo_price) < Number(product.price) && (
+                    <div className="hidden md:flex items-center gap-3">
+                      <div className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                        <span className="font-medium">
+                          {Math.round(
+                            ((Number(product.price) -
+                              Number(product.promo_price)) /
+                              Number(product.price)) *
+                              100
+                          )}
+                          % OFF
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {/* Highlights */}
