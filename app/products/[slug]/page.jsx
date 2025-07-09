@@ -296,12 +296,11 @@ export default function ProductPage() {
           id: p.id,
           name: p.name,
           description: p.product_details || "No description available",
-          cost: parseFloat((p.cost ?? "0").toString().replace(/,/g, "")) || 0,
-          price: parseFloat((p.price ?? "0").toString().replace(/,/g, "")) || 0,
-          promo_price:
-            parseFloat((p.promo_price ?? "0").toString().replace(/,/g, "")) ||
-            0,
-
+          price: p.price ? parseFloat(p.price.toString().replace(/,/g, "")) : 0,
+          promo_price: p.promo_price
+            ? parseFloat(p.promo_price.toString().replace(/,/g, ""))
+            : null,
+          end_date: p.end_date,
           promo_tag: p.promo_tag,
           quantity: p.quantity,
           review: p.review,
@@ -718,14 +717,17 @@ export default function ProductPage() {
               <div className="lg:hidden px-4 mt-4 mb-4">
                 {/* Product Name & Category */}
                 <div>
-                  {product.promo_tag && (
-                    <div className="mb-1 md:mb-2">
-                      <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2 py-[2px] rounded-tl-lg rounded-br-lg shadow-md">
-                        <Clock className="w-4 h-4 text-white" />
-                        {product.promo_tag}
-                      </span>
-                    </div>
-                  )}
+                  {product.promo_tag &&
+                    product.end_date &&
+                    new Date(product.end_date) > new Date() && (
+                      <div className="mb-1 md:mb-2">
+                        <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2 py-[2px] rounded-tl-lg rounded-br-lg shadow-md">
+                          <Clock className="w-4 h-4 text-white" />
+                          {product.promo_tag}
+                        </span>
+                      </div>
+                    )}
+
                   <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 uppercase">
                     {product.name}
                   </h1>
@@ -743,39 +745,53 @@ export default function ProductPage() {
                 </div>
 
                 {/* Price Section */}
-                <div className="space-y-4 mt-4">
-                  <div className="flex items-end gap-3">
+                <div className="space-y-4 ">
+                  <div className="items-end gap-3 hidden md:flex">
                     <div className="flex items-baseline gap-1">
                       <IndianRupee className="w-6 h-6 text-[#A00300]" />
                       <span className="text-4xl font-bold text-[#A00300]">
-                        {Number(product.price).toFixed(2)}
+                        {product.promo_price &&
+                        Number(product.promo_price) > 0 &&
+                        product.end_date &&
+                        new Date(product.end_date) > new Date()
+                          ? Number(product.promo_price).toFixed(2)
+                          : Number(product.price).toFixed(2)}
                       </span>
                     </div>
 
-                    {product.cost && product.cost > product.price && (
-                      <div className="flex items-center gap-1">
-                        <IndianRupee className="w-4 h-4 text-gray-400" />
-                        <span className="text-xl text-gray-500 line-through">
-                          {Number(product.cost).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
+                    {/* Show original price with strike-through if promo is valid */}
+                    {product.promo_price &&
+                      Number(product.promo_price) > 0 &&
+                      product.end_date &&
+                      new Date(product.end_date) > new Date() &&
+                      Number(product.promo_price) < Number(product.price) && (
+                        <div className="items-center gap-1 hidden md:flex">
+                          <IndianRupee className="w-4 h-4 text-gray-400" />
+                          <span className="text-xl text-gray-500 line-through">
+                            {Number(product.price).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
                   </div>
 
-                  {product.cost && product.cost > product.price && (
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full">
-                        <span className="font-medium">
-                          {Math.round(
-                            ((Number(product.cost) - Number(product.price)) /
-                              Number(product.cost)) *
-                              100
-                          )}
-                          % OFF
-                        </span>
+                  {Number(product.promo_price) > 0 &&
+                    Number(product.promo_price) < Number(product.price) &&
+                    product.end_date &&
+                    new Date(product.end_date) > new Date() && (
+                      <div className="hidden md:flex items-center gap-3">
+                        <div className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                          <span className="font-medium">
+                            {Math.round(
+                              ((Number(product.price) -
+                                Number(product.promo_price)) /
+                                Number(product.price)) *
+                                100
+                            )}
+                            % OFF
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             </div>
@@ -807,14 +823,17 @@ export default function ProductPage() {
 
               {/* Product Name & Category */}
               <div className="">
-                {product.promo_tag && (
-                  <div className="mb-1 md:mb-2">
-                    <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2 py-[2px] rounded-tl-lg rounded-br-lg shadow-md">
-                      <Clock className="w-4 h-4 text-white" />
-                      {product.promo_tag}
-                    </span>
-                  </div>
-                )}
+                {product.promo_tag &&
+                  product.end_date &&
+                  new Date(product.end_date) > new Date() && (
+                    <div className="mb-1 md:mb-2">
+                      <span className="inline-flex items-center gap-1 bg-gradient-to-r from-[#A00300] to-[#D62D20] text-white text-sm font-bold px-2 py-[2px] rounded-tl-lg rounded-br-lg shadow-md">
+                        <Clock className="w-4 h-4 text-white" />
+                        {product.promo_tag}
+                      </span>
+                    </div>
+                  )}
+
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 uppercase hidden md:flex">
                   {product.name}
                 </h1>
@@ -849,14 +868,20 @@ export default function ProductPage() {
                   <div className="flex items-baseline gap-1">
                     <IndianRupee className="w-6 h-6 text-[#A00300]" />
                     <span className="text-4xl font-bold text-[#A00300]">
-                      {Number(product.promo_price) > 0
+                      {product.promo_price &&
+                      Number(product.promo_price) > 0 &&
+                      product.end_date &&
+                      new Date(product.end_date) > new Date()
                         ? Number(product.promo_price).toFixed(2)
                         : Number(product.price).toFixed(2)}
                     </span>
                   </div>
 
-                  {/* Show original price with strike-through if promo_price exists and is less than price */}
-                  {Number(product.promo_price) > 0 &&
+                  {/* Show original price with strike-through if promo is valid */}
+                  {product.promo_price &&
+                    Number(product.promo_price) > 0 &&
+                    product.end_date &&
+                    new Date(product.end_date) > new Date() &&
                     Number(product.promo_price) < Number(product.price) && (
                       <div className="items-center gap-1 hidden md:flex">
                         <IndianRupee className="w-4 h-4 text-gray-400" />
@@ -868,7 +893,9 @@ export default function ProductPage() {
                 </div>
 
                 {Number(product.promo_price) > 0 &&
-                  Number(product.promo_price) < Number(product.price) && (
+                  Number(product.promo_price) < Number(product.price) &&
+                  product.end_date &&
+                  new Date(product.end_date) > new Date() && (
                     <div className="hidden md:flex items-center gap-3">
                       <div className="flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full">
                         <span className="font-medium">
@@ -1122,6 +1149,8 @@ export default function ProductPage() {
                         <div className="relative flex flex-col h-full">
                           {item.promo_price !== null &&
                             item.promo_price !== undefined &&
+                            item.end_date &&
+                            new Date(item.end_date) > new Date() &&
                             item.price > item.promo_price && (
                               <div className="absolute top-2 right-2 bg-red-100 text-red-700 text-[10px] font-bold px-2 py-[2px] rounded z-10">
                                 {Math.round(
@@ -1150,17 +1179,20 @@ export default function ProductPage() {
 
                             <div className="flex items-center gap-1 text-sm text-gray-800 mt-auto">
                               <IndianRupee className="w-4 h-4 text-[#A00300]" />
+
                               <span className="font-semibold text-[#A00300]">
-                                {Number(
-                                  item.promo_price !== null &&
-                                    item.promo_price !== undefined
-                                    ? item.promo_price
-                                    : item.price
-                                ).toFixed(2)}
+                                {item.promo_price !== null &&
+                                item.promo_price !== undefined &&
+                                item.end_date &&
+                                new Date(item.end_date) > new Date()
+                                  ? Number(item.promo_price).toFixed(2)
+                                  : Number(item.price).toFixed(2)}
                               </span>
 
                               {item.promo_price !== null &&
                                 item.promo_price !== undefined &&
+                                item.end_date &&
+                                new Date(item.end_date) > new Date() &&
                                 item.price > item.promo_price && (
                                   <span className="text-xs text-gray-400 line-through ml-1">
                                     {Number(item.price).toFixed(2)}
@@ -1397,9 +1429,17 @@ export default function ProductPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-x-24 gap-y-16 md:gap-y-20">
               {product.related_items.slice(1, 17).map((item) => {
-                const hasPromo = item.discount && item.discount > 0;
-                const originalPrice = Number(item.cost);
-                const promoPrice = Number(item.price);
+                const hasPromo =
+                  item.promo_price !== null &&
+                  item.promo_price !== undefined &&
+                  item.end_date &&
+                  new Date(item.end_date) > new Date();
+
+                const originalPrice = Number(item.price);
+                const promoPrice = hasPromo
+                  ? Number(item.promo_price)
+                  : originalPrice;
+
                 const discountPercent = hasPromo
                   ? Math.round(
                       ((originalPrice - promoPrice) / originalPrice) * 100
@@ -1459,17 +1499,19 @@ export default function ProductPage() {
                         <div className="flex items-baseline gap-1.5">
                           <p className="text-sm font-bold text-[#A00300]">
                             ₹
-                            {Number(
-                              item.promo_price !== null &&
-                                item.promo_price !== undefined
-                                ? item.promo_price
-                                : item.price
-                            ).toFixed(2)}
+                            {item.promo_price !== null &&
+                            item.promo_price !== undefined &&
+                            item.end_date &&
+                            new Date(item.end_date) > new Date()
+                              ? Number(item.promo_price).toFixed(2)
+                              : Number(item.price).toFixed(2)}
                           </p>
 
-                          {/* Show strikethrough only if promo_price is valid and less than price */}
+                          {/* Show strikethrough only if promo is valid and less than price */}
                           {item.promo_price !== null &&
                             item.promo_price !== undefined &&
+                            item.end_date &&
+                            new Date(item.end_date) > new Date() &&
                             item.price > item.promo_price && (
                               <p className="text-xs text-gray-400 line-through">
                                 ₹{Number(item.price).toFixed(2)}
@@ -1480,6 +1522,8 @@ export default function ProductPage() {
                         {/* Right: % OFF */}
                         {item.promo_price !== null &&
                           item.promo_price !== undefined &&
+                          item.end_date &&
+                          new Date(item.end_date) > new Date() &&
                           item.price > item.promo_price && (
                             <span className="text-[10px] font-bold text-red-600 ml-auto">
                               {Math.round(

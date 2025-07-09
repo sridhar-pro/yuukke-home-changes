@@ -150,7 +150,6 @@ const AllProductsPage = () => {
       });
 
       const result = await response.json();
-      console.log("data ->", result);
 
       if (result?.products) {
         setProducts(result.products);
@@ -600,19 +599,6 @@ const AllProductsPage = () => {
                         <Heart className="w-4 h-4 text-gray-600" />
                       </button>
 
-                      {product.promo_price !== null &&
-                        product.promo_price !== undefined &&
-                        product.price > product.promo_price && (
-                          <div className="absolute top-2 left-2 bg-red-100 text-red-700 text-[10px] font-bold px-2 py-[2px] rounded z-10">
-                            {Math.round(
-                              ((product.price - product.promo_price) /
-                                product.price) *
-                                100
-                            )}
-                            % OFF
-                          </div>
-                        )}
-
                       {/* Business Type Badges */}
                       {product.business_type === "3" && (
                         <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
@@ -635,10 +621,9 @@ const AllProductsPage = () => {
                     <div className="text-sm font-semibold text-gray-900 truncate">
                       {product.name}
                     </div>
-                    {/* <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500">
                       {product.subtitle || "Healthy Snack"}
-                    </div> */}
-
+                    </div>
                     <div className="flex gap-2 mt-1 items-center">
                       {hasPromo && (
                         <span className="text-sm text-gray-400 line-through">

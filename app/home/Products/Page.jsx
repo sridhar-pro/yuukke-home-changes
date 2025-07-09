@@ -178,6 +178,11 @@ const FeaturedProducts = () => {
           } else {
             const data = await fetchWithAuth(url);
             setter(Array.isArray(data) ? data : []);
+
+            // ✅ Log only the gift API response
+            if (key === "gift") {
+              console.log("🎁 Gift Products Data:", data);
+            }
           }
         } catch (err) {
           console.error(`Fetch ${key} products error:`, err.message);
@@ -310,20 +315,32 @@ const FeaturedProducts = () => {
         className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
       >
         {products.map((product) => {
+          const now = new Date();
+          const promoEndDate = product.end_date
+            ? new Date(product.end_date)
+            : null;
+          const isPromoActive =
+            promoEndDate && promoEndDate.getTime() > now.getTime();
+
           const hasPromo =
-            product.promotion === "1" ||
-            (product.promo_price && product.promo_price > 0);
-          const promoPrice = product.promo_price
-            ? Number(product.promo_price)
-            : product.sale_price
-            ? Number(product.sale_price)
-            : Number(product.price);
-          const review = Number(product.review);
+            isPromoActive &&
+            (product.promotion === "1" ||
+              (product.promo_price && product.promo_price > 0));
+
+          const promoPrice =
+            hasPromo && product.promo_price
+              ? Number(product.promo_price)
+              : product.sale_price
+              ? Number(product.sale_price)
+              : Number(product.price);
+
           const originalPrice = Number(product.price);
           const discountPercent = hasPromo
             ? Math.round(((originalPrice - promoPrice) / originalPrice) * 100)
             : 0;
+
           const showPromoTag = product.promo_tag && hasPromo;
+          const review = Number(product.review);
 
           // Handle quantity check including negative values
           const quantityStr = product.quantity?.toString() || "";
@@ -333,6 +350,8 @@ const FeaturedProducts = () => {
             quantityStr === "" ||
             isNaN(quantityNum) ||
             quantityNum <= 0;
+
+          // Now you can use `promoPrice`, `hasPromo`, `discountPercent`, etc. in rendering
 
           return (
             <motion.div
@@ -518,7 +537,9 @@ const FeaturedProducts = () => {
                 <div className="mt-0">
                   {/* Price Display */}
                   <div className="space-y-1 mt-1">
-                    {hasPromo ? (
+                    {product.promo_price &&
+                    product.end_date &&
+                    new Date(product.end_date) > new Date() ? (
                       <>
                         <div className="flex items-baseline gap-1.5 md:gap-2 flex-wrap">
                           <p
@@ -526,16 +547,22 @@ const FeaturedProducts = () => {
                               isOutOfStock ? "text-gray-500" : "text-[#A00300]"
                             }`}
                           >
-                            ₹{promoPrice.toFixed(2)}
+                            ₹{Number(product.promo_price).toFixed(2)}
                           </p>
                           <p className="text-xs md:text-sm text-gray-400 line-through">
-                            ₹{originalPrice.toFixed(2)}
+                            ₹{Number(product.price).toFixed(2)}
                           </p>
                         </div>
 
                         {/* Show discount badge only on mobile in next line */}
                         <span className="block md:inline text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg md:ml-2">
-                          {discountPercent}% OFF
+                          {Math.round(
+                            ((Number(product.price) -
+                              Number(product.promo_price)) /
+                              Number(product.price)) *
+                              100
+                          )}
+                          % OFF
                         </span>
                       </>
                     ) : (
@@ -544,7 +571,7 @@ const FeaturedProducts = () => {
                           isOutOfStock ? "text-gray-500" : "text-gray-900"
                         }`}
                       >
-                        ₹{originalPrice.toFixed(2)}
+                        ₹{Number(product.price).toFixed(2)}
                       </p>
                     )}
                   </div>
@@ -769,14 +796,17 @@ const FeaturedProducts = () => {
                 {/* Content Section with updated buttons */}
                 <div className="flex flex-col justify-between order-2 md:order-none">
                   <div>
-                    {/* Promo Tag - Only shown if quickViewProduct.promo_tag exists */}
-                    {quickViewProduct.promo_tag && (
-                      <div className="mb-2">
-                        <span className="inline-block px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-md">
-                          {quickViewProduct.promo_tag}
-                        </span>
-                      </div>
-                    )}
+                    {/* Promo Tag - Only shown if promo_tag exists and end_date is valid */}
+                    {quickViewProduct.promo_tag &&
+                      quickViewProduct.end_date &&
+                      new Date(quickViewProduct.end_date) > new Date() && (
+                        <div className="mb-2">
+                          <span className="inline-block px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-md">
+                            {quickViewProduct.promo_tag}
+                          </span>
+                        </div>
+                      )}
+
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-2 capitalize">
                       {quickViewProduct.name}
                     </h2>
@@ -793,31 +823,26 @@ const FeaturedProducts = () => {
                     </div>
 
                     <div className="mb-3 md:mb-4">
-                      {quickViewProduct?.promo_price ||
-                      quickViewProduct?.price ? (
+                      {quickViewProduct?.price && (
                         <>
-                          {/* Final price (Promo or fallback) */}
-                          <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
-                            ₹
-                            {Number(
-                              quickViewProduct.promo_price ||
-                                quickViewProduct.price
-                            ).toFixed(2)}
-                          </span>
+                          {quickViewProduct?.promo_price &&
+                          quickViewProduct?.end_date &&
+                          new Date(quickViewProduct.end_date) > new Date() ? (
+                            <>
+                              {/* Promo Price */}
+                              <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
+                                ₹
+                                {Number(quickViewProduct.promo_price).toFixed(
+                                  2
+                                )}
+                              </span>
 
-                          {/* Strike out cost or original price */}
-                          {quickViewProduct.promo_price &&
-                            quickViewProduct.price && (
+                              {/* Strikeout Original Price */}
                               <span className="ml-2 sm:ml-4 text-lg sm:text-xl text-gray-400 line-through">
                                 ₹{Number(quickViewProduct.price).toFixed(2)}
                               </span>
-                            )}
 
-                          {/* Show offer percentage */}
-                          {quickViewProduct.promo_price &&
-                            quickViewProduct.price &&
-                            quickViewProduct.price >
-                              quickViewProduct.promo_price && (
+                              {/* Discount Percentage */}
                               <span className="ml-2 sm:ml-4 text-sm sm:text-base text-red-600 font-semibold">
                                 {Math.round(
                                   ((quickViewProduct.price -
@@ -827,9 +852,15 @@ const FeaturedProducts = () => {
                                 )}
                                 % OFF
                               </span>
-                            )}
+                            </>
+                          ) : (
+                            // No valid promo, show only price
+                            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800">
+                              ₹{Number(quickViewProduct.price).toFixed(2)}
+                            </span>
+                          )}
                         </>
-                      ) : null}
+                      )}
                     </div>
 
                     <p className="text-gray-600 leading-relaxed text-xs sm:text-sm mb-4 md:mb-6 line-clamp-3 md:line-clamp-none">
