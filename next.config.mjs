@@ -5,8 +5,18 @@ const LIVE_API = "https://marketplace.yuukke.com/api/v1/Marketv2";
 
 const nextConfig = {
   images: {
-    domains: ["marketplace.betalearnings.com", "marketplace.yuukke.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "marketplace.betalearnings.com",
+      },
+      {
+        protocol: "https",
+        hostname: "marketplace.yuukke.com",
+      },
+    ],
   },
+
   async rewrites() {
     return [
       {

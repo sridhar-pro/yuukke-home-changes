@@ -23,7 +23,7 @@ const CategoriesSection = () => {
 
   const words = ["Skincare", "Stationery", "Gift Sets", "Food", "Home Decor's"];
 
-  const { getValidToken, isAuthReady } = useAuth();
+  const { getValidToken } = useAuth();
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -58,73 +58,70 @@ const CategoriesSection = () => {
   });
 
   useEffect(() => {
-    if (!isAuthReady) return;
-
     if (hasFetched.current) return;
     hasFetched.current = true;
 
+    const fetchWithAuth = async (url, retry = false) => {
+      const token = await getValidToken();
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401 && !retry) {
+        localStorage.removeItem("authToken");
+        return fetchWithAuth(url, true);
+      }
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return await res.json();
+    };
+
     const fetchCategories = async () => {
       try {
-        // Check cache
         const cachedData = localStorage.getItem("cachedCategories");
         const cachedTimestamp = localStorage.getItem("categoriesTimestamp");
 
-        // Use cached data if valid
+        // 🧠 Use cached data if under 1hr (3600000ms)
         if (
           cachedData &&
           cachedTimestamp &&
           Date.now() - parseInt(cachedTimestamp) < 3600000
         ) {
           const parsedData = JSON.parse(cachedData);
-
           setCategories(parsedData);
           setDuplicatedCategories([...parsedData, ...parsedData]);
-          setLoading(false);
           return;
         }
 
-        // Fetch fresh data
-        const token = await getValidToken();
         setLoading(true);
 
-        const res = await fetch("/api/homeCategory", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // 🚀 Fetch from API with retry logic
+        const data = await fetchWithAuth("/api/homeCategory");
 
-        if (!res.ok) {
-          console.error("API request failed with status:", res.status);
-          if (res.status === 401) {
-            localStorage.removeItem("authToken");
-            return fetchCategories(); // retry once
-          }
-          throw new Error(`Failed to fetch categories: ${res.status}`);
-        }
-
-        const data = await res.json();
-
-        // Create mapped version
         const mapped = data?.map((cat) => ({
           name: cat.name,
           image: `https://marketplace.yuukke.com/assets/uploads/thumbs/${cat.image}`,
           slug: cat.slug,
-          subcategories: cat.subcategories || [], // Ensure subcategories exists
+          subcategories: cat.subcategories || [],
         }));
 
-        // Store in localStorage
+        // 💾 Store in localStorage
         localStorage.setItem("cachedCategories", JSON.stringify(mapped));
         localStorage.setItem("categoriesTimestamp", Date.now().toString());
 
         setCategories(mapped);
         setDuplicatedCategories([...mapped, ...mapped]);
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategories();
-  }, [getValidToken, isAuthReady]);
+  }, [getValidToken]);
 
   const itemVariants = {
     initial: { opacity: 0, y: 20 },
