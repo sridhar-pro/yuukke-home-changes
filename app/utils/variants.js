@@ -1,17 +1,13 @@
-// utils/variants.js
-
-// Parent container variant: fades in + staggers children
+// Parent container variant: fades in + staggers children (no delay)
 export const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      duration: 0.5, // Optional: base fade duration
+      duration: 0.5,
       ease: "easeOut",
-      delay: 0.2,
       when: "beforeChildren",
       staggerChildren: 0.1,
-      delayChildren: 0.3,
     },
   },
 };
@@ -29,8 +25,8 @@ export const itemVariants = {
   },
 };
 
-// Reusable single fade-in-up animation with custom delay
-export const fadeInUp = (delay = 0) => ({
+// Reusable single fade-in-up animation with no delay
+export const fadeInUp = () => ({
   hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
@@ -38,7 +34,6 @@ export const fadeInUp = (delay = 0) => ({
     transition: {
       duration: 0.45,
       ease: "easeOut",
-      delay,
     },
   },
 });

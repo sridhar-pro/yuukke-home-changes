@@ -991,7 +991,19 @@ const FeaturedProducts = () => {
                                         id: quickViewProduct.id,
                                         name: quickViewProduct.name,
                                         qty: quantity,
-                                        price: quickViewProduct.cost,
+                                        price:
+                                          quickViewProduct.promo_price &&
+                                          quickViewProduct.end_date &&
+                                          new Date(quickViewProduct.end_date) >
+                                            new Date() &&
+                                          Number(quickViewProduct.promo_price) >
+                                            0 &&
+                                          Number(quickViewProduct.promo_price) <
+                                            Number(quickViewProduct.price)
+                                            ? Number(
+                                                quickViewProduct.promo_price
+                                              )
+                                            : Number(quickViewProduct.price),
                                         image: quickViewProduct.image,
                                       },
                                     ];
