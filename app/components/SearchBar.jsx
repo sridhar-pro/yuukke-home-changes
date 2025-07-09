@@ -129,22 +129,21 @@ const SearchBar = () => {
             <div
               key={product.id}
               onClick={() => router.push(`/products/${product.slug}`)}
-              className="flex gap-5 items-start p-4 hover:bg-gray-50 cursor-pointer transition border-b last:border-none"
+              className="flex gap-4 md:gap-6 items-center p-4 md:p-5 bg-white rounded-xl transition-all cursor-pointer border-b border-gray-100 hover:border-gray-300"
             >
               <img
                 src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
                 alt={product.name}
-                className="w-10 md:w-20 h-10 md:h-20 rounded-xl object-cover shadow-md"
+                className="w-14 h-14 md:w-20 md:h-20 rounded-lg object-cover shadow-sm flex-shrink-0"
               />
-              <div className="flex-1">
-                <h3 className="text-sm md:text-base font-semibold text-gray-800 line-clamp-1">
+
+              <div className="flex flex-col justify-center flex-1">
+                <h3 className="text-base md:text-lg font-semibold text-gray-800 line-clamp-1">
                   {product.name}
                 </h3>
-                <p className="text-xs md:text-sm text-gray-500 line-clamp-2">
+
+                <p className="text-sm md:text-base text-gray-500 mt-1 line-clamp-2">
                   {product.description || "A perfect gift for any occasion."}
-                </p>
-                <p className="text-sm md:text-base  font-bold text-gray-900 mt-2">
-                  ₹{parseFloat(product.promo_price || product.price).toFixed(2)}
                 </p>
               </div>
             </div>

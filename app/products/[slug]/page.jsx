@@ -1147,15 +1147,18 @@ export default function ProductPage() {
                         className="group"
                       >
                         <div className="relative flex flex-col h-full">
-                          {item.promo_price !== null &&
-                            item.promo_price !== undefined &&
-                            item.end_date &&
-                            new Date(item.end_date) > new Date() &&
-                            item.price > item.promo_price && (
+                          {item?.promo_price !== null &&
+                            item?.promo_price !== undefined &&
+                            !isNaN(Number(item.promo_price)) &&
+                            Number(item.promo_price) > 0 &&
+                            Number(item.promo_price) < Number(item.price) &&
+                            item?.end_date &&
+                            new Date(item.end_date).getTime() > Date.now() && (
                               <div className="absolute top-2 right-2 bg-red-100 text-red-700 text-[10px] font-bold px-2 py-[2px] rounded z-10">
                                 {Math.round(
-                                  ((item.price - item.promo_price) /
-                                    item.price) *
+                                  ((Number(item.price) -
+                                    Number(item.promo_price)) /
+                                    Number(item.price)) *
                                     100
                                 )}
                                 % OFF
@@ -1180,24 +1183,25 @@ export default function ProductPage() {
                             <div className="flex items-center gap-1 text-sm text-gray-800 mt-auto">
                               <IndianRupee className="w-4 h-4 text-[#A00300]" />
 
-                              <span className="font-semibold text-[#A00300]">
-                                {item.promo_price !== null &&
-                                item.promo_price !== undefined &&
-                                item.end_date &&
-                                new Date(item.end_date) > new Date()
-                                  ? Number(item.promo_price).toFixed(2)
-                                  : Number(item.price).toFixed(2)}
-                              </span>
-
                               {item.promo_price !== null &&
-                                item.promo_price !== undefined &&
-                                item.end_date &&
-                                new Date(item.end_date) > new Date() &&
-                                item.price > item.promo_price && (
-                                  <span className="text-xs text-gray-400 line-through ml-1">
-                                    {Number(item.price).toFixed(2)}
+                              item.promo_price !== undefined &&
+                              item.end_date &&
+                              new Date(item.end_date) > new Date() &&
+                              Number(item.promo_price) > 0 &&
+                              Number(item.promo_price) < Number(item.price) ? (
+                                <>
+                                  <span className="font-semibold text-[#A00300]">
+                                    {Number(item.promo_price).toFixed(2)}
                                   </span>
-                                )}
+                                  <span className="text-xs text-gray-400 line-through ml-1">
+                                    ₹{Number(item.price).toFixed(2)}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="font-semibold text-[#A00300]">
+                                  {Number(item.price).toFixed(2)}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1429,22 +1433,14 @@ export default function ProductPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-x-24 gap-y-16 md:gap-y-20">
               {product.related_items.slice(1, 17).map((item) => {
-                const hasPromo =
-                  item.promo_price !== null &&
-                  item.promo_price !== undefined &&
-                  item.end_date &&
-                  new Date(item.end_date) > new Date();
-
-                const originalPrice = Number(item.price);
-                const promoPrice = hasPromo
-                  ? Number(item.promo_price)
-                  : originalPrice;
-
-                const discountPercent = hasPromo
-                  ? Math.round(
-                      ((originalPrice - promoPrice) / originalPrice) * 100
-                    )
-                  : 0;
+                const hasValidPromo =
+                  item?.promo_price !== null &&
+                  item?.promo_price !== undefined &&
+                  !isNaN(Number(item.promo_price)) &&
+                  Number(item.promo_price) > 0 &&
+                  Number(item.promo_price) < Number(item.price) &&
+                  item?.end_date &&
+                  new Date(item.end_date).getTime() > Date.now();
 
                 return (
                   <motion.div
@@ -1495,44 +1491,33 @@ export default function ProductPage() {
                       </h4>
 
                       <div className="flex justify-between items-baseline gap-1.5 flex-wrap">
-                        {/* Left: Price + Striked price */}
+                        {/* Left: Price and strikethrough */}
                         <div className="flex items-baseline gap-1.5">
                           <p className="text-sm font-bold text-[#A00300]">
                             ₹
-                            {item.promo_price !== null &&
-                            item.promo_price !== undefined &&
-                            item.end_date &&
-                            new Date(item.end_date) > new Date()
+                            {hasValidPromo
                               ? Number(item.promo_price).toFixed(2)
                               : Number(item.price).toFixed(2)}
                           </p>
 
-                          {/* Show strikethrough only if promo is valid and less than price */}
-                          {item.promo_price !== null &&
-                            item.promo_price !== undefined &&
-                            item.end_date &&
-                            new Date(item.end_date) > new Date() &&
-                            item.price > item.promo_price && (
-                              <p className="text-xs text-gray-400 line-through">
-                                ₹{Number(item.price).toFixed(2)}
-                              </p>
-                            )}
+                          {hasValidPromo && (
+                            <p className="text-xs text-gray-400 line-through">
+                              ₹{Number(item.price).toFixed(2)}
+                            </p>
+                          )}
                         </div>
 
                         {/* Right: % OFF */}
-                        {item.promo_price !== null &&
-                          item.promo_price !== undefined &&
-                          item.end_date &&
-                          new Date(item.end_date) > new Date() &&
-                          item.price > item.promo_price && (
-                            <span className="text-[10px] font-bold text-red-600 ml-auto">
-                              {Math.round(
-                                ((item.price - item.promo_price) / item.price) *
-                                  100
-                              )}
-                              % OFF
-                            </span>
-                          )}
+                        {hasValidPromo && (
+                          <span className="text-[10px] font-bold text-red-600 ml-auto">
+                            {Math.round(
+                              ((Number(item.price) - Number(item.promo_price)) /
+                                Number(item.price)) *
+                                100
+                            )}
+                            % OFF
+                          </span>
+                        )}
                       </div>
                     </div>
                   </motion.div>
