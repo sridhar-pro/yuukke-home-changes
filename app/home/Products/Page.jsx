@@ -312,7 +312,7 @@ const FeaturedProducts = () => {
         {products.map((product) => {
           const hasPromo =
             product.promotion === "1" ||
-            (product.discount && product.discount > 0);
+            (product.promo_price && product.promo_price > 0);
           const promoPrice = product.promo_price
             ? Number(product.promo_price)
             : product.sale_price
