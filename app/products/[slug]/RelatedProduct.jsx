@@ -6,12 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useAuth } from "@/app/utils/AuthContext";
 import { motion } from "framer-motion";
 import { containerVariants, itemVariants } from "@/app/utils/variants";
+import Head from "next/head";
 
 export default function RelatedProductPage() {
-  const { getValidToken } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,102 +21,63 @@ export default function RelatedProductPage() {
   const slug = params?.slug;
 
   useEffect(() => {
-    const fetchProductDetails = async (retry = false) => {
-      try {
-        if (!slug) return;
-        setLoading(true);
+    if (!slug) return;
 
-        const productSlug = Array.isArray(slug) ? slug[0] : slug;
+    const productSlug = Array.isArray(slug) ? slug[0] : slug;
+    const localKey = `product-${productSlug}`;
+    const cached = localStorage.getItem(localKey);
 
-        const token = await getValidToken();
-        if (!token) {
-          if (!retry) {
-            localStorage.removeItem("authToken");
-            await login(); // 🔁 force re-login if token missing
-            return fetchProductDetails(true);
-          } else {
-            throw new Error("Authentication failed");
-          }
-        }
-
-        const response = await fetch("/api/quantityCheck", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            slug: productSlug,
-            id: productSlug.split("-").pop() || "",
-          }),
-        });
-
-        if (response.status === 401 && !retry) {
-          localStorage.removeItem("authToken");
-          return await fetchProductDetails(true); // 🔁 silent retry
-        }
-
-        if (!response.ok) {
-          // Don't throw ugly 401 error to frontend
-          if (retry) throw new Error("Failed to fetch product details.");
-          else return;
-        }
-
-        const data = await response.json();
-        if (!data?.data?.[0]) throw new Error("Product data not found");
-        console.log("data:", data);
-
-        const p = data.data[0];
-
-        setProduct({
-          id: p.id,
-          name: p.name,
-          description: p.product_details || "No description available",
-          price: p.price ? parseFloat(p.price.toString().replace(/,/g, "")) : 0,
-          promo_price: p.promo_price
-            ? parseFloat(p.promo_price.toString().replace(/,/g, ""))
-            : null,
-          end_date: p.end_date,
-          promo_tag: p.promo_tag,
-          quantity: p.quantity,
-          review: p.review,
-          review_count: p.review,
-          category: p.category,
-          brand: p.brand,
-          weight: p.weight,
-          dimensions: p.dimensions,
-          image: p.p_image || "/placeholder-product.jpg",
-          image_g: p.product_image || [],
-          store_details: p.store_details || [],
-          sellerproduct: p.sellerproduct || [],
-          related_items: p.related_items || [],
-          seller: p.seller || {},
-          length: p.length || 0,
-          width: p.width || 0,
-          height: p.height || 0,
-          weight: p.weight || 0,
-          product_returnable: p.product_returnable,
-          minimum_order_qty: p.minimum_order_qty,
-          minimum_order_limit: p.minimum_order_limit,
-        });
-
-        setSelectedImage(p.p_image || "/placeholder-product.jpg");
-      } catch (err) {
-        // Only log error silently, no frontend display for first-time 401s
-        console.error("[Silent Catch] Product fetch failed:", err.message);
-
-        if (retry) {
-          setError("Something went wrong loading product."); // ✅ only after retry
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (slug) {
-      fetchProductDetails();
+    if (!cached) {
+      console.warn("⚠️ No cached product data found in localStorage");
+      setError("Product details not found.");
+      return;
     }
-  }, [slug, getValidToken]);
+
+    try {
+      setLoading(true);
+      const parsed = JSON.parse(cached);
+      const p = parsed.data;
+
+      setProduct({
+        id: p.id,
+        name: p.name,
+        description: p.product_details || "No description available",
+        price: p.price ? parseFloat(p.price.toString().replace(/,/g, "")) : 0,
+        promo_price: p.promo_price
+          ? parseFloat(p.promo_price.toString().replace(/,/g, ""))
+          : null,
+        end_date: p.end_date,
+        promo_tag: p.promo_tag,
+        quantity: p.quantity,
+        review: p.review,
+        review_count: p.review,
+        category: p.category,
+        brand: p.brand,
+        weight: p.weight,
+        dimensions: p.dimensions,
+        image: p.p_image || "/placeholder-product.jpg",
+        image_g: p.product_image || [],
+        store_details: p.store_details || [],
+        sellerproduct: p.sellerproduct || [],
+        related_items: p.related_items || [],
+        seller: p.seller || {},
+        length: p.length || 0,
+        width: p.width || 0,
+        height: p.height || 0,
+        weight: p.weight || 0,
+        product_returnable: p.product_returnable,
+        minimum_order_qty: p.minimum_order_qty,
+        minimum_order_limit: p.minimum_order_limit,
+      });
+
+      setSelectedImage(p.p_image || "/placeholder-product.jpg");
+    } catch (err) {
+      console.error("❌ Error parsing cached product data:", err);
+      setError("Failed to load cached product.");
+    } finally {
+      setLoading(false);
+    }
+  }, [slug]);
 
   // Loading state
   if (loading) {
@@ -166,6 +126,22 @@ export default function RelatedProductPage() {
   // Main product display
   return (
     <>
+      {product && (
+        <Head>
+          <title>{`${product.name} | Your Brand Name`}</title>
+          <meta
+            name="description"
+            content={
+              product.description?.slice(0, 150) ||
+              "Check out this amazing product from our store!"
+            }
+          />
+          <meta property="og:title" content={`${product.name}`} />
+          <meta property="og:description" content={product.description} />
+          <meta property="og:image" content={product.image} />
+        </Head>
+      )}
+
       {product.related_items?.length > 0 && (
         <section className="w-full border-t border-gray-100 pt-14 pb-20 px-6 bg-white">
           <motion.div

@@ -181,7 +181,7 @@ const FeaturedProducts = () => {
 
             // ✅ Log only the gift API response
             if (key === "gift") {
-              console.log("🎁 Gift Products Data:", data);
+              // console.log("🎁 Gift Products Data:", data);
             }
           }
         } catch (err) {
@@ -364,7 +364,7 @@ const FeaturedProducts = () => {
             >
               {/* Out of Stock Overlay */}
               {isOutOfStock && (
-                <div className="absolute inset-0 bg-white/10 z-[100] rounded-2xl flex items-center justify-center">
+                <div className="absolute inset-0 bg-white/10 z-[70] rounded-2xl flex items-center justify-center">
                   <span className="bg-[#A00300] text-white text-sm font-bold px-3 py-1 rounded-lg">
                     Out of Stock
                   </span>
