@@ -1180,7 +1180,7 @@ export default function ProductPage() {
                               {item.name}
                             </h4>
 
-                            <div className="flex items-center gap-1 text-sm text-gray-800 mt-auto">
+                            <div className="flex items-center gap-1 text-sm text-gray-800 mt-auto leading-tight">
                               <IndianRupee className="w-4 h-4 text-[#A00300]" />
 
                               {item.promo_price !== null &&
@@ -1193,8 +1193,8 @@ export default function ProductPage() {
                                   <span className="font-semibold text-[#A00300]">
                                     {Number(item.promo_price).toFixed(2)}
                                   </span>
-                                  <span className="text-xs text-gray-400 line-through ml-1">
-                                    ₹{Number(item.price).toFixed(2)}
+                                  <span className="text-xs text-gray-400 line-through">
+                                    {Number(item.price).toFixed(0)}
                                   </span>
                                 </>
                               ) : (
