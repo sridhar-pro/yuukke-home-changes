@@ -94,75 +94,64 @@ const SearchBar = () => {
       {/* Search Overlay (appears when active) */}
       {isActive && (
         <div
-          className="fixed inset-0 bg-transparent z-40"
-          onClick={() => {
-            setIsActive(false);
-            setShowDropdown(false);
-            setQuery("");
-          }}
+          className="absolute top-20 md:top-full -right-[9.5rem] md:right-0 z-50 -mt-10 "
+          ref={containerRef}
         >
-          <div
-            className="absolute top-[8.5rem] md:top-[4.5rem] left-1/2 transform -translate-x-1/2 w-full max-w-md px-4
-                     md:left-auto md:-right-12 md:transform-none md:max-w-lg"
-            ref={containerRef}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Search Input */}
-            <div className="flex items-center bg-white border border-gray-200 shadow-lg rounded-full px-4 py-3 focus-within:ring-2 ring-gray-300 transition-all duration-200">
-              <Search className="w-5 h-5 text-gray-400 mr-2" />
-              <input
-                type="text"
-                value={query}
-                onChange={handleInputChange}
-                autoFocus
-                placeholder="Search for the perfect gift..."
-                className="flex-1 text-sm text-gray-800 placeholder-gray-400 outline-none bg-transparent"
-              />
-              <button
-                onClick={() => {
-                  setQuery("");
-                  setResults([]);
-                  setIsActive(false);
-                  setShowDropdown(false);
-                }}
-                className="text-gray-400 hover:text-[#A00300] transition duration-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Dropdown Results */}
-            {showDropdown && results.length > 0 && (
-              <div className="mt-1 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-96 overflow-y-auto animate-fade-in-fast scrollbar-hide">
-                {results.map((product) => (
-                  <div
-                    key={product.id}
-                    onClick={() => {
-                      router.push(`/products/${product.slug}`);
-                      setIsActive(false);
-                      setShowDropdown(false);
-                      setQuery("");
-                    }}
-                    className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer transition-all duration-150 border-b border-b-gray-300 last:border-none"
-                  >
-                    <img
-                      src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
-                      alt={product.name}
-                      className="w-20 md:w-24 h-20 md:h-24 object-cover rounded-xl shadow-sm"
-                    />
-                    <div className="flex flex-col justify-center overflow-hidden">
-                      <p className="text-lg capitalize font-semibold text-gray-900 line-clamp-1">
-                        {product.name}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                        {product.details || "Perfect for every occasion!"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Search Input */}
+          <div className="flex items-center bg-white border border-gray-200 shadow-lg rounded-full px-4 py-3 focus-within:ring-2 ring-gray-300 transition-all duration-200 w-[90vw] max-w-md md:w-[400px]">
+            <Search className="w-5 h-5 text-gray-400 mr-2" />
+            <input
+              type="text"
+              value={query}
+              onChange={handleInputChange}
+              autoFocus
+              placeholder="Search for the perfect gift..."
+              className="flex-1 text-sm text-gray-800 placeholder-gray-400 outline-none bg-transparent"
+            />
+            <button
+              onClick={() => {
+                setQuery("");
+                setResults([]);
+                setIsActive(false);
+                setShowDropdown(false);
+              }}
+              className="text-gray-400 hover:text-[#A00300] transition duration-200"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
+
+          {/* Dropdown Results */}
+          {showDropdown && results.length > 0 && (
+            <div className="mt-1 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-96 overflow-y-auto animate-fade-in-fast scrollbar-hide w-[90vw] max-w-md md:w-[400px]">
+              {results.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => {
+                    router.push(`/products/${product.slug}`);
+                    setIsActive(false);
+                    setShowDropdown(false);
+                    setQuery("");
+                  }}
+                  className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer transition-all duration-150 border-b border-b-gray-300 last:border-none"
+                >
+                  <img
+                    src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
+                    alt={product.name}
+                    className="w-20 md:w-24 h-20 md:h-24 object-cover rounded-xl shadow-sm"
+                  />
+                  <div className="flex flex-col justify-center overflow-hidden">
+                    <p className="text-lg capitalize font-semibold text-gray-900 line-clamp-1">
+                      {product.name}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                      {product.details || "Perfect for every occasion!"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
