@@ -135,7 +135,7 @@ const CategoriesSection = () => {
         </div>
 
         <Link
-          href="/categories"
+          href="https://marketplace.yuukke.com/shop/products"
           className="flex items-center gap-2 text-sm font-medium group relative overflow-hidden px-1"
         >
           <span className="relative z-10">Discover All Categories</span>

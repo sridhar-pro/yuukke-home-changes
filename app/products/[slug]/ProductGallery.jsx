@@ -1182,9 +1182,12 @@ export default function ProductGalleryPage() {
                 >
                   {[
                     ...Array(
-                      Number(product.quantity) > 0
-                        ? Number(product.quantity)
-                        : 1
+                      Math.min(
+                        Number(product.quantity) > 0
+                          ? Number(product.quantity)
+                          : 1,
+                        10 // 👈 max limit capped at 10
+                      )
                     ).keys(),
                   ].map((i) => (
                     <option

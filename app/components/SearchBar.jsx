@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { Search, X, SearchIcon } from "lucide-react"; // Premium-feel icons
+import { Search, X } from "lucide-react";
 
 const SearchBar = () => {
   const [isActive, setIsActive] = useState(false);
@@ -12,7 +12,6 @@ const SearchBar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
   const timeoutRef = useRef(null);
-  const dropdownRef = useRef(null);
   const containerRef = useRef(null);
 
   const handleSearch = async (searchTerm) => {
@@ -21,15 +20,14 @@ const SearchBar = () => {
       return;
     }
 
-    const token = localStorage.getItem("authToken"); // or useAuth()?.token if using context
-
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      console.warn("No auth token found. Aborting search.");
+      console.warn("No auth token found");
       return;
     }
 
     try {
-      const response = await axios.post(
+      const res = await axios.post(
         "/api/getProducts",
         {
           filters: {
@@ -45,12 +43,12 @@ const SearchBar = () => {
         }
       );
 
-      if (response.data?.products) {
-        setResults(response.data.products);
+      if (res.data?.products) {
+        setResults(res.data.products);
         setShowDropdown(true);
       }
-    } catch (error) {
-      console.error("Search failed:", error);
+    } catch (err) {
+      console.error("Search failed:", err);
       setResults([]);
     }
   };
@@ -63,13 +61,15 @@ const SearchBar = () => {
 
     timeoutRef.current = setTimeout(() => {
       handleSearch(value);
-    }, 400); // debounce
+    }, 400);
   };
 
-  const handleClickOutside = (event) => {
-    if (containerRef.current && !containerRef.current.contains(event.target)) {
+  const handleClickOutside = (e) => {
+    if (containerRef.current && !containerRef.current.contains(e.target)) {
       setIsActive(false);
       setShowDropdown(false);
+      setQuery("");
+      setResults([]);
     }
   };
 
@@ -79,75 +79,89 @@ const SearchBar = () => {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative z-50">
-      {!isActive ? (
+    <div className="relative">
+      {/* Search Icon Button */}
+      {!isActive && (
         <button
           onClick={() => setIsActive(true)}
           className="p-2 hover:bg-gray-100 rounded-full transition"
-          aria-label="Open Search"
+          aria-label="Open search"
         >
-          <Search className="w-4 md:w-5 h-4 md:h-5 text-black cursor-pointer" />
+          <Search className="w-5 h-5 text-gray-600" />
         </button>
-      ) : (
-        <div className="flex items-center border rounded-full px-4 py-2 bg-white shadow-md transition-all w-[200px] md:w-[400px] max-w-full">
-          <Search className="w-5 h-5 text-gray-400 mr-2" />
-
-          <input
-            type="text"
-            value={query}
-            onChange={handleInputChange}
-            autoFocus
-            placeholder="Search gifts..."
-            className="flex-1 text-sm outline-none bg-transparent"
-          />
-          <button
-            onClick={() => {
-              setQuery("");
-              setResults([]);
-              setIsActive(false);
-              setShowDropdown(false);
-            }}
-            className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
-            aria-label="Close Search"
-          >
-            <X className="hidden md:flex w-5 h-5 z-50" />
-          </button>
-        </div>
       )}
 
-      {showDropdown && results.length > 0 && (
+      {/* Search Overlay (appears when active) */}
+      {isActive && (
         <div
-          className="absolute w-[200px] md:w-[400px] mt-2 bg-white border rounded-xl shadow-2xl max-h-80 overflow-y-auto p-0 md:p-5"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="fixed inset-0 top-14 bg-transparent z-40"
+          onClick={() => {
+            setIsActive(false);
+            setShowDropdown(false);
+            setQuery("");
+          }}
         >
-          <style jsx>{`
-            div::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          {results.map((product) => (
-            <div
-              key={product.id}
-              onClick={() => router.push(`/products/${product.slug}`)}
-              className="flex gap-2 md:gap-6 items-center p-2 md:p-5 bg-white rounded-lg transition-all cursor-pointer border-b border-gray-100 hover:border-gray-300"
-            >
-              <img
-                src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
-                alt={product.name}
-                className="w-8 h-8 md:w-20 md:h-20 rounded-md object-cover shadow-sm flex-shrink-0"
+          <div
+            className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4"
+            ref={containerRef}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search Input */}
+            <div className="flex items-center bg-white border border-gray-200 shadow-lg rounded-full px-4 py-3 focus-within:ring-2 ring-gray-300 transition-all duration-200">
+              <Search className="w-5 h-5 text-gray-400 mr-2" />
+              <input
+                type="text"
+                value={query}
+                onChange={handleInputChange}
+                autoFocus
+                placeholder="Search for the perfect gift..."
+                className="flex-1 text-sm text-gray-800 placeholder-gray-400 outline-none bg-transparent"
               />
-
-              <div className="flex flex-col justify-center flex-1">
-                <h3 className="text-xs md:text-lg font-semibold text-gray-800 line-clamp-1">
-                  {product.name}
-                </h3>
-
-                <p className="text-[10px] md:text-base text-gray-500 mt-1 line-clamp-2">
-                  {product.details || "A perfect gift for any occasion."}
-                </p>
-              </div>
+              <button
+                onClick={() => {
+                  setQuery("");
+                  setResults([]);
+                  setIsActive(false);
+                  setShowDropdown(false);
+                }}
+                className="text-gray-400 hover:text-red-500 transition duration-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          ))}
+
+            {/* Dropdown Results */}
+            {showDropdown && results.length > 0 && (
+              <div className="mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-96 overflow-y-auto animate-fade-in-fast">
+                {results.map((product) => (
+                  <div
+                    key={product.id}
+                    onClick={() => {
+                      router.push(`/products/${product.slug}`);
+                      setIsActive(false);
+                      setShowDropdown(false);
+                      setQuery("");
+                    }}
+                    className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer transition-all duration-150 border-b border-b-gray-300 last:border-none"
+                  >
+                    <img
+                      src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
+                      alt={product.name}
+                      className="w-20 h-20 object-cover rounded-xl shadow-sm"
+                    />
+                    <div className="flex flex-col justify-center overflow-hidden">
+                      <p className="text-sm font-semibold text-gray-900 line-clamp-1">
+                        {product.name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                        {product.details || "Perfect for every occasion!"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

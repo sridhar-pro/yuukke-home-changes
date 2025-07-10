@@ -5,6 +5,7 @@ import { AuthProvider } from "./utils/AuthContext";
 import LoaderWrapper from "./components/Loader/LoaderWrapper";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import MobileBottomBar from "./components/MobileBottomBar";
 
 export const metadata = {
   title: "Yuukke",
@@ -44,7 +45,9 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             <Navbar />
             {children}
+            {/* <MobileBottomBar /> */}
             <Footer />
+
             <ToastContainer
               position="bottom-right"
               autoClose={3000}

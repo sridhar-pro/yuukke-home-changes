@@ -272,8 +272,8 @@ export default function Navbar() {
           </div>
 
           {/* Right Side Icons */}
-          <div className="flex items-center space-x-0 ml-3 md:ml-0">
-            <div className="hidden md:flex space-x-0">
+          <div className="flex items-center space-x-2 ml-3 md:ml-0">
+            <div className="hidden md:flex space-x-6">
               <SearchBar />
               <button
                 aria-label="Profile"
