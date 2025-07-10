@@ -86,10 +86,10 @@ const SearchBar = () => {
           className="p-2 hover:bg-gray-100 rounded-full transition"
           aria-label="Open Search"
         >
-          <Search className="w-5 md:w-5 h-5 md:h-5 text-black cursor-pointer" />
+          <Search className="w-4 md:w-5 h-4 md:h-5 text-black cursor-pointer" />
         </button>
       ) : (
-        <div className="flex items-center border rounded-full px-4 py-2 bg-white shadow-md transition-all w-[180px] md:w-[400px] max-w-full">
+        <div className="flex items-center border rounded-full px-4 py-2 bg-white shadow-md transition-all w-[200px] md:w-[400px] max-w-full">
           <Search className="w-5 h-5 text-gray-400 mr-2" />
 
           <input
@@ -117,7 +117,7 @@ const SearchBar = () => {
 
       {showDropdown && results.length > 0 && (
         <div
-          className="absolute w-[180px] md:w-[400px] mt-2 bg-white border rounded-xl shadow-2xl max-h-80 overflow-y-auto p-0 md:p-5"
+          className="absolute w-[200px] md:w-[400px] mt-2 bg-white border rounded-xl shadow-2xl max-h-80 overflow-y-auto p-0 md:p-5"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           <style jsx>{`
@@ -129,20 +129,20 @@ const SearchBar = () => {
             <div
               key={product.id}
               onClick={() => router.push(`/products/${product.slug}`)}
-              className="flex gap-4 md:gap-6 items-center p-3 md:p-5 bg-white rounded-xl transition-all cursor-pointer border-b border-gray-100 hover:border-gray-300"
+              className="flex gap-2 md:gap-6 items-center p-2 md:p-5 bg-white rounded-lg transition-all cursor-pointer border-b border-gray-100 hover:border-gray-300"
             >
               <img
                 src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
                 alt={product.name}
-                className="w-10 h-10 md:w-20 md:h-20 rounded-lg object-cover shadow-sm flex-shrink-0"
+                className="w-8 h-8 md:w-20 md:h-20 rounded-md object-cover shadow-sm flex-shrink-0"
               />
 
               <div className="flex flex-col justify-center flex-1">
-                <h3 className="text-sm md:text-lg font-semibold text-gray-800 line-clamp-1">
+                <h3 className="text-xs md:text-lg font-semibold text-gray-800 line-clamp-1">
                   {product.name}
                 </h3>
 
-                <p className="text-xs md:text-base text-gray-500 mt-1 line-clamp-2">
+                <p className="text-[10px] md:text-base text-gray-500 mt-1 line-clamp-2">
                   {product.details || "A perfect gift for any occasion."}
                 </p>
               </div>
