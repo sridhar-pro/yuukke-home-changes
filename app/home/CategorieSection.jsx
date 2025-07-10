@@ -204,19 +204,7 @@ const CategoriesSection = () => {
         {/* Scrolling Categories */}
         <div
           ref={sliderRef}
-          {...swipeHandlers}
-          className={`flex gap-x-8 sm:gap-x-10 w-max items-center px-2 cursor-grab active:cursor-grabbing
-    ${categories.length ? "category-slider-track" : ""} 
-    ${
-      typeof window !== "undefined" && window.innerWidth < 768
-        ? "overflow-x-auto"
-        : "overflow-hidden"
-    } 
-    scrollbar-hide`}
-          onMouseDown={handleMouseDown}
-          onMouseLeave={handleMouseLeave}
-          onMouseUp={handleMouseUp}
-          onMouseMove={handleMouseMove}
+          className="flex gap-x-8 sm:gap-x-10 items-center px-2 cursor-grab active:cursor-grabbing overflow-x-auto scroll-smooth scrollbar-hide snap-x snap-mandatory"
           style={{ userSelect: isDragging ? "none" : "auto" }}
         >
           {loading &&
@@ -279,31 +267,6 @@ const CategoriesSection = () => {
             ))}
         </div>
       </div>
-      <style jsx global>{`
-        @keyframes slide {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-100%);
-          }
-        }
-        .category-slider-track {
-          animation: slide 80s linear infinite;
-          will-change: transform;
-        }
-        .category-slider-track:hover {
-          animation-play-state: paused;
-        }
-
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-      `}</style>
     </section>
   );
 };
