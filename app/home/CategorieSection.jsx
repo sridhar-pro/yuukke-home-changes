@@ -23,11 +23,13 @@ const CategoriesSection = () => {
 
   const words = ["Skincare", "Stationery", "Gift Sets", "Food", "Home Decor's"];
 
-  const { getValidToken } = useAuth();
+  const { getValidToken, isAuthReady } = useAuth();
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
-    setStartX(e.pageX - sliderRef.current.offsetLeft);
+    setStartX(
+      e.pageX || e.touches?.[0]?.pageX || 0 - sliderRef.current.offsetLeft
+    );
     setScrollLeft(sliderRef.current.scrollLeft);
   };
 
@@ -41,9 +43,13 @@ const CategoriesSection = () => {
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
+
     e.preventDefault();
-    const x = e.pageX - sliderRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // Adjust scroll speed
+
+    const clientX = e.pageX || e.touches?.[0]?.pageX || 0;
+    const x = clientX - sliderRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // scroll speed factor
+
     sliderRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -53,28 +59,63 @@ const CategoriesSection = () => {
         sliderRef.current.scrollLeft -= eventData.deltaX;
       }
     },
-    preventDefaultTouchmoveEvent: true,
+    preventScrollOnSwipe: true, // 🧼 Better than preventDefaultTouchmoveEvent for Safari
     trackMouse: true,
+    trackTouch: true,
+    delta: 10, // minimum movement to trigger
   });
+
   useEffect(() => {
-    if (hasFetched.current) return;
+    if (!isAuthReady || hasFetched.current) return;
     hasFetched.current = true;
 
-    const fetchWithAuth = async (url, retry = false) => {
-      const token = await getValidToken();
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 
-      if (res.status === 401 && !retry) {
-        localStorage.removeItem("authToken");
-        return fetchWithAuth(url, true);
+    const getTokenWithRetry = async (maxAttempts = 10, delay = 500) => {
+      let attempt = 0;
+      while (attempt < maxAttempts) {
+        const token = await getValidToken();
+        if (token) return token;
+
+        console.warn(
+          `⏳ Attempt ${attempt + 1} failed to get token. Retrying...`
+        );
+        await wait(delay);
+        attempt++;
       }
 
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
+      throw new Error(
+        "❌ Failed to obtain auth token after multiple attempts."
+      );
+    };
+
+    const fetchWithAuth = async (url, retry = false) => {
+      try {
+        const token = await getTokenWithRetry();
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.status === 401 && !retry) {
+          console.warn("⚠️ 401 Unauthorized. Retrying after clearing token...");
+          localStorage.removeItem("authToken");
+          return await fetchWithAuth(url, true);
+        }
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`❌ HTTP error ${res.status}:`, errText);
+          return null;
+        }
+
+        return await res.json();
+      } catch (err) {
+        console.error("🔥 fetchWithAuth failed:", err.message);
+        return null;
+      }
     };
 
     const fetchCategories = async () => {
@@ -82,8 +123,9 @@ const CategoriesSection = () => {
         setLoading(true);
 
         const data = await fetchWithAuth("/api/homeCategory");
+        if (!data) return;
 
-        const mapped = data?.map((cat) => ({
+        const mapped = data.map((cat) => ({
           name: cat.name,
           image: `https://marketplace.yuukke.com/assets/uploads/thumbs/${cat.image}`,
           slug: cat.slug,
@@ -93,14 +135,14 @@ const CategoriesSection = () => {
         setCategories(mapped);
         setDuplicatedCategories([...mapped, ...mapped]);
       } catch (err) {
-        console.error("Failed to fetch categories:", err);
+        console.error("🚨 Failed to fetch categories:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategories();
-  }, [getValidToken]);
+  }, [getValidToken, isAuthReady]);
 
   const itemVariants = {
     initial: { opacity: 0, y: 20 },
@@ -146,21 +188,22 @@ const CategoriesSection = () => {
       </div>
 
       {/* Slider */}
-      <div className="relative overflow-x-auto overflow-y-hidden max-w-[95rem] mx-auto scrollbar-hide">
-        {/* Gradient edge masks */}
-        {/* <div className="hidden sm:block pointer-events-none absolute top-0 left-0 w-20 h-full z-20 bg-gradient-to-r from-white via-white/80 to-transparent" />
-        <div className="hidden sm:block pointer-events-none absolute top-0 right-0 w-20 h-full z-20 bg-gradient-to-l from-white via-white/80 to-transparent" /> */}
-
-        {/* Scrolling Categories */}
+      <div
+        className="relative overflow-x-auto overflow-y-hidden max-w-[95rem] mx-auto scrollbar-hide"
+        style={{ WebkitOverflowScrolling: "touch" }} // Safari scroll smooth
+      >
         <div
           ref={sliderRef}
           {...swipeHandlers}
-          className="flex gap-x-8 sm:gap-x-10 w-max items-center px-2 cursor-grab active:cursor-grabbing"
+          className="flex gap-x-8 sm:gap-x-10 items-center px-2 cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
           onMouseLeave={handleMouseLeave}
           onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}
-          style={{ userSelect: isDragging ? "none" : "auto" }}
+          style={{
+            minWidth: `${duplicatedCategories.length * 160}px`, // Ensures scroll in Safari
+            userSelect: isDragging ? "none" : "auto",
+          }}
         >
           {loading &&
             Array.from({ length: 9 }).map((_, index) => (
@@ -173,7 +216,6 @@ const CategoriesSection = () => {
                     <div className="w-full h-full rounded-full bg-gradient-to-tr from-gray-200 via-gray-100 to-gray-300 shimmer" />
                   </div>
                 </div>
-
                 <div className="w-16 sm:w-20 h-3 rounded-full bg-gray-200 shimmer" />
               </div>
             ))}
@@ -197,6 +239,7 @@ const CategoriesSection = () => {
                     <div className="w-full h-full rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center p-2">
                       <motion.div
                         className="relative w-20 h-20 sm:w-20 sm:h-20 md:w-24 md:h-24"
+                        style={{ minWidth: "80px", minHeight: "80px" }} // Safari fix
                         whileHover={{ rotate: 5, scale: 1.05 }}
                         transition={{ type: "spring", stiffness: 200 }}
                       >
