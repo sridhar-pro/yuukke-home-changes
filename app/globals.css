@@ -42,6 +42,10 @@ html {
   display: none;
 }
 
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
 /* Shimmer animation (for loaders or skeletons) */
 @keyframes shimmer {
   0% {

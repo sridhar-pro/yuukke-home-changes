@@ -150,7 +150,7 @@ export default function Navbar() {
     <>
       {/* Top Marquee */}
       <div className="bg-black text-white text-xs md:text-sm lg:text-base h-14 md:h-10 flex items-center justify-center font-serif relative overflow-hidden">
-        <button onClick={handlePrev} className="absolute left-5 md:left-48">
+        <button onClick={handlePrev} className="absolute left-5">
           <IoMdArrowRoundBack className="w-4 h-4 text-white opacity-90" />
         </button>
 
@@ -169,7 +169,7 @@ export default function Navbar() {
           </AnimatePresence>
         </div>
 
-        <button onClick={handleNext} className="absolute right-5 md:right-48">
+        <button onClick={handleNext} className="absolute right-5">
           <IoMdArrowRoundForward className="w-4 h-4 text-white opacity-90" />
         </button>
       </div>
