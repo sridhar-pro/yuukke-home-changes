@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, useAnimation } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,10 +18,6 @@ const CategoriesSection = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [velocity, setVelocity] = useState(0);
-  const animationRef = useRef(null);
-  const lastTimeRef = useRef(0);
-  const lastPosRef = useRef(0);
 
   const hasFetched = useRef(false); // Add this ref
 
@@ -29,135 +25,51 @@ const CategoriesSection = () => {
 
   const { getValidToken, isAuthReady } = useAuth();
 
-  // Improved mouse/touch handlers with momentum
-  const handleMouseDown = useCallback((e) => {
+  const handleMouseDown = (e) => {
     setIsDragging(true);
+    setStartX(
+      e.pageX || e.touches?.[0]?.pageX || 0 - sliderRef.current.offsetLeft
+    );
+    setScrollLeft(sliderRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+
+    e.preventDefault();
+
     const clientX = e.pageX || e.touches?.[0]?.pageX || 0;
-    setStartX(clientX - (sliderRef.current?.offsetLeft || 0));
-    setScrollLeft(sliderRef.current?.scrollLeft || 0);
-    setVelocity(0);
-    lastPosRef.current = sliderRef.current?.scrollLeft || 0;
-    lastTimeRef.current = performance.now();
+    const x = clientX - sliderRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // scroll speed factor
 
-    // Cancel any ongoing animation
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    if (isDragging) {
-      setIsDragging(false);
-      applyMomentum();
-    }
-  }, [isDragging]);
-
-  const handleMouseUp = useCallback(() => {
-    if (isDragging) {
-      setIsDragging(false);
-      applyMomentum();
-    }
-  }, [isDragging]);
-
-  const handleMouseMove = useCallback(
-    (e) => {
-      if (!isDragging || !sliderRef.current) return;
-
-      e.preventDefault();
-      const clientX = e.pageX || e.touches?.[0]?.pageX || 0;
-      const x = clientX - sliderRef.current.offsetLeft;
-      const walk = (x - startX) * 1.5; // Reduced multiplier for better control
-
-      // Calculate velocity for momentum
-      const now = performance.now();
-      const timeDelta = now - lastTimeRef.current;
-      if (timeDelta > 0) {
-        const pos = scrollLeft - walk;
-        const posDelta = pos - lastPosRef.current;
-        const newVelocity = posDelta / timeDelta;
-
-        // Smooth velocity changes
-        setVelocity((prev) => prev * 0.5 + newVelocity * 0.5);
-        lastPosRef.current = pos;
-        lastTimeRef.current = now;
-      }
-
-      sliderRef.current.scrollLeft = scrollLeft - walk;
-    },
-    [isDragging, startX, scrollLeft]
-  );
-
-  // Apply momentum after release
-  const applyMomentum = useCallback(() => {
-    if (!sliderRef.current || Math.abs(velocity) < 0.1) return;
-
-    const slider = sliderRef.current;
-    const maxScroll = slider.scrollWidth - slider.clientWidth;
-    let currentPos = slider.scrollLeft;
-    let currentTime = 0;
-    const duration = 1000; // ms
-    const startTime = performance.now();
-    const startPos = currentPos;
-    const distance = velocity * 200; // Adjust multiplier for desired momentum
-
-    const animate = (time) => {
-      currentTime = time - startTime;
-      if (currentTime >= duration) {
-        slider.scrollLeft = Math.max(0, Math.min(currentPos, maxScroll));
-        return;
-      }
-
-      // Ease-out function
-      const t = currentTime / duration;
-      const easeT = 1 - Math.pow(1 - t, 3);
-      currentPos = startPos + distance * easeT;
-
-      // Clamp to bounds
-      currentPos = Math.max(0, Math.min(currentPos, maxScroll));
-      slider.scrollLeft = currentPos;
-
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-  }, [velocity]);
-
-  // Clean up animation frame on unmount
-  useEffect(() => {
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, []);
+    sliderRef.current.scrollLeft = scrollLeft - walk;
+  };
 
   const swipeHandlers = useSwipeable({
-    onSwiping: (eventData) => {
-      if (!sliderRef.current) return;
+    onSwiping: ({ deltaX }) => {
       const slider = sliderRef.current;
-      const newScrollLeft = slider.scrollLeft - eventData.deltaX;
-      const maxScroll = slider.scrollWidth - slider.clientWidth;
-      slider.scrollLeft = Math.max(0, Math.min(newScrollLeft, maxScroll));
+      if (!slider) return;
 
-      // Update velocity for momentum
-      const now = performance.now();
-      const timeDelta = now - lastTimeRef.current;
-      if (timeDelta > 0) {
-        const posDelta = slider.scrollLeft - lastPosRef.current;
-        setVelocity(posDelta / timeDelta);
-        lastPosRef.current = slider.scrollLeft;
-        lastTimeRef.current = now;
+      const maxScroll = slider.scrollWidth - slider.clientWidth;
+      const newScroll = slider.scrollLeft - deltaX;
+
+      // Clamp between 0 and max
+      if (newScroll >= 0 && newScroll <= maxScroll) {
+        slider.scrollLeft = newScroll;
       }
-    },
-    onSwiped: () => {
-      applyMomentum();
     },
     preventScrollOnSwipe: true,
     trackMouse: true,
     trackTouch: true,
-    delta: 5, // More sensitive
-    swipeDuration: 500,
+    delta: 10,
   });
 
   useEffect(() => {
@@ -230,7 +142,6 @@ const CategoriesSection = () => {
         }));
 
         setCategories(mapped);
-        setDuplicatedCategories([...mapped, ...mapped]);
       } catch (err) {
         console.error("🚨 Failed to fetch categories:", err);
       } finally {
@@ -294,18 +205,19 @@ const CategoriesSection = () => {
         <div
           ref={sliderRef}
           {...swipeHandlers}
-          className="flex gap-x-8 sm:gap-x-10 w-max items-center px-2 cursor-grab active:cursor-grabbing"
+          className={`flex gap-x-8 sm:gap-x-10 w-max items-center px-2 cursor-grab active:cursor-grabbing
+    ${categories.length ? "category-slider-track" : ""} 
+    ${
+      typeof window !== "undefined" && window.innerWidth < 768
+        ? "overflow-x-auto"
+        : "overflow-hidden"
+    } 
+    scrollbar-hide`}
           onMouseDown={handleMouseDown}
           onMouseLeave={handleMouseLeave}
           onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}
-          onTouchStart={handleMouseDown}
-          onTouchEnd={handleMouseUp}
-          onTouchMove={handleMouseMove}
-          style={{
-            userSelect: isDragging ? "none" : "auto",
-            WebkitOverflowScrolling: "touch", // For iOS momentum scrolling
-          }}
+          style={{ userSelect: isDragging ? "none" : "auto" }}
         >
           {loading &&
             Array.from({ length: 9 }).map((_, index) => (
@@ -324,7 +236,7 @@ const CategoriesSection = () => {
             ))}
 
           {!loading &&
-            duplicatedCategories.map((category, index) => (
+            categories.map((category, index) => (
               <motion.div
                 key={index + category.slug}
                 className="group flex-shrink-0 snap-start w-[110px] sm:w-[130px] md:w-[160px] flex flex-col items-center"
@@ -367,6 +279,31 @@ const CategoriesSection = () => {
             ))}
         </div>
       </div>
+      <style jsx global>{`
+        @keyframes slide {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-100%);
+          }
+        }
+        .category-slider-track {
+          animation: slide 80s linear infinite;
+          will-change: transform;
+        }
+        .category-slider-track:hover {
+          animation-play-state: paused;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+      `}</style>
     </section>
   );
 };
