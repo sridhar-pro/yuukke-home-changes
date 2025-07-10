@@ -86,6 +86,7 @@ export default function ProductGalleryPage() {
 
       const data = await res.json();
       const result = data?.data?.data;
+      console.log("data:", data);
 
       if (result?.pincode && result?.country === "IN" && result?.city) {
         setCity(result.city); // ✅ dynamically set city from API

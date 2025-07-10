@@ -12,8 +12,8 @@ import CartSidebar from "../CartSideBar";
 import { useAuth } from "@/app/utils/AuthContext";
 
 const messages = [
-  "Unlock exclusive savings: Enjoy 25% off on all Sanskruthi Solutions products!",
-  "Enjoy free shipping on orders above Rs. 1000!",
+  "Yuukke Anniversary Sale – Enjoy 30% OFF Sitewide • Handcrafted • Eco‑Friendly • Gift‑Ready • Limited Time Only – Shop Now!",
+  "Enjoy free shipping on orders above Rs. 700!",
 ];
 
 export default function Navbar() {
@@ -142,7 +142,7 @@ export default function Navbar() {
   return (
     <>
       {/* Top Marquee */}
-      <div className="bg-black text-white text-xs md:text-sm lg:text-base h-10 flex items-center justify-center font-serif relative overflow-hidden">
+      <div className="bg-black text-white text-xs md:text-sm lg:text-base h-14 md:h-10 flex items-center justify-center font-serif relative overflow-hidden">
         <button onClick={handlePrev} className="absolute left-5 md:left-48">
           <IoMdArrowRoundBack className="w-4 h-4 text-white opacity-90" />
         </button>

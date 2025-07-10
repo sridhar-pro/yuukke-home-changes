@@ -55,14 +55,21 @@ const CategoriesSection = () => {
 
   const swipeHandlers = useSwipeable({
     onSwiping: (eventData) => {
-      if (sliderRef.current) {
-        sliderRef.current.scrollLeft -= eventData.deltaX;
-      }
+      if (!sliderRef.current) return;
+
+      const slider = sliderRef.current;
+
+      // Calculate intended scroll position
+      const newScrollLeft = slider.scrollLeft - eventData.deltaX;
+
+      // Clamp it between 0 and max scrollable width
+      const maxScroll = slider.scrollWidth - slider.clientWidth;
+      slider.scrollLeft = Math.max(0, Math.min(newScrollLeft, maxScroll));
     },
-    preventScrollOnSwipe: true, // 🧼 Better than preventDefaultTouchmoveEvent for Safari
+    preventScrollOnSwipe: true, // works better across Safari
     trackMouse: true,
     trackTouch: true,
-    delta: 10, // minimum movement to trigger
+    delta: 10,
   });
 
   useEffect(() => {
@@ -75,18 +82,25 @@ const CategoriesSection = () => {
       let attempt = 0;
       while (attempt < maxAttempts) {
         const token = await getValidToken();
-        if (token) return token;
+
+        if (token && typeof token === "string" && token.length > 10) {
+          return token;
+        }
 
         console.warn(
-          `⏳ Attempt ${attempt + 1} failed to get token. Retrying...`
+          `⏳ Token attempt ${attempt + 1} failed or invalid. Retrying...`
         );
+
+        if (attempt === 5) {
+          console.warn("🧹 Clearing token after 5 failed attempts...");
+          localStorage.removeItem("authToken"); // force refresh if token exists but is trash
+        }
+
         await wait(delay);
         attempt++;
       }
 
-      throw new Error(
-        "❌ Failed to obtain auth token after multiple attempts."
-      );
+      throw new Error("❌ Auth token unavailable after multiple retries.");
     };
 
     const fetchWithAuth = async (url, retry = false) => {
@@ -188,22 +202,21 @@ const CategoriesSection = () => {
       </div>
 
       {/* Slider */}
-      <div
-        className="relative overflow-x-auto overflow-y-hidden max-w-[95rem] mx-auto scrollbar-hide"
-        style={{ WebkitOverflowScrolling: "touch" }} // Safari scroll smooth
-      >
+      <div className="relative overflow-x-auto overflow-y-hidden max-w-[95rem] mx-auto scrollbar-hide">
+        {/* Gradient edge masks */}
+        {/* <div className="hidden sm:block pointer-events-none absolute top-0 left-0 w-20 h-full z-20 bg-gradient-to-r from-white via-white/80 to-transparent" />
+      <div className="hidden sm:block pointer-events-none absolute top-0 right-0 w-20 h-full z-20 bg-gradient-to-l from-white via-white/80 to-transparent" /> */}
+
+        {/* Scrolling Categories */}
         <div
           ref={sliderRef}
           {...swipeHandlers}
-          className="flex gap-x-8 sm:gap-x-10 items-center px-2 cursor-grab active:cursor-grabbing"
+          className="flex gap-x-8 sm:gap-x-10 w-max items-center px-2 cursor-grab active:cursor-grabbing"
           onMouseDown={handleMouseDown}
           onMouseLeave={handleMouseLeave}
           onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}
-          style={{
-            minWidth: `${duplicatedCategories.length * 160}px`, // Ensures scroll in Safari
-            userSelect: isDragging ? "none" : "auto",
-          }}
+          style={{ userSelect: isDragging ? "none" : "auto" }}
         >
           {loading &&
             Array.from({ length: 9 }).map((_, index) => (
@@ -216,6 +229,7 @@ const CategoriesSection = () => {
                     <div className="w-full h-full rounded-full bg-gradient-to-tr from-gray-200 via-gray-100 to-gray-300 shimmer" />
                   </div>
                 </div>
+
                 <div className="w-16 sm:w-20 h-3 rounded-full bg-gray-200 shimmer" />
               </div>
             ))}
@@ -239,7 +253,6 @@ const CategoriesSection = () => {
                     <div className="w-full h-full rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center p-2">
                       <motion.div
                         className="relative w-20 h-20 sm:w-20 sm:h-20 md:w-24 md:h-24"
-                        style={{ minWidth: "80px", minHeight: "80px" }} // Safari fix
                         whileHover={{ rotate: 5, scale: 1.05 }}
                         transition={{ type: "spring", stiffness: 200 }}
                       >
