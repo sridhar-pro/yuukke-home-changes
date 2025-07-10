@@ -54,19 +54,19 @@ const CategoriesSection = () => {
   };
 
   const swipeHandlers = useSwipeable({
-    onSwiping: (eventData) => {
-      if (!sliderRef.current) return;
-
+    onSwiping: ({ deltaX }) => {
       const slider = sliderRef.current;
+      if (!slider) return;
 
-      // Calculate intended scroll position
-      const newScrollLeft = slider.scrollLeft - eventData.deltaX;
-
-      // Clamp it between 0 and max scrollable width
       const maxScroll = slider.scrollWidth - slider.clientWidth;
-      slider.scrollLeft = Math.max(0, Math.min(newScrollLeft, maxScroll));
+      const newScroll = slider.scrollLeft - deltaX;
+
+      // Clamp between 0 and max
+      if (newScroll >= 0 && newScroll <= maxScroll) {
+        slider.scrollLeft = newScroll;
+      }
     },
-    preventScrollOnSwipe: true, // works better across Safari
+    preventScrollOnSwipe: true,
     trackMouse: true,
     trackTouch: true,
     delta: 10,
@@ -206,7 +206,8 @@ const CategoriesSection = () => {
         <div
           ref={sliderRef}
           {...swipeHandlers}
-          className="flex gap-x-8 sm:gap-x-10 w-max items-center px-2 cursor-grab active:cursor-grabbing"
+          className="flex gap-x-8 sm:gap-x-10 w-max items-center px-2 cursor-grab active:cursor-grabbing
+             overflow-x-auto scroll-smooth snap-x snap-mandatory"
           onMouseDown={handleMouseDown}
           onMouseLeave={handleMouseLeave}
           onMouseUp={handleMouseUp}
@@ -233,7 +234,7 @@ const CategoriesSection = () => {
             duplicatedCategories.map((category, index) => (
               <motion.div
                 key={index + category.slug}
-                className="group flex-shrink-0 w-[110px] sm:w-[130px] md:w-[160px] flex flex-col items-center"
+                className="group flex-shrink-0 snap-start w-[110px] sm:w-[130px] md:w-[160px] flex flex-col items-center"
                 custom={index}
                 variants={itemVariants}
                 initial="initial"
