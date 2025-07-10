@@ -7,70 +7,19 @@ import Image from "next/image";
 import { FlipWords } from "../components/ui/flip-words";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
-import { useSwipeable } from "react-swipeable";
 
 const CategoriesSection = () => {
   const [categories, setCategories] = useState([]);
-  const [duplicatedCategories, setDuplicatedCategories] = useState([]);
   const controls = useAnimation();
   const sliderRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
 
   const hasFetched = useRef(false); // Add this ref
 
   const words = ["Skincare", "Stationery", "Gift Sets", "Food", "Home Decor's"];
 
   const { getValidToken, isAuthReady } = useAuth();
-
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setStartX(
-      e.pageX || e.touches?.[0]?.pageX || 0 - sliderRef.current.offsetLeft
-    );
-    setScrollLeft(sliderRef.current.scrollLeft);
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-
-    e.preventDefault();
-
-    const clientX = e.pageX || e.touches?.[0]?.pageX || 0;
-    const x = clientX - sliderRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // scroll speed factor
-
-    sliderRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const swipeHandlers = useSwipeable({
-    onSwiping: ({ deltaX }) => {
-      const slider = sliderRef.current;
-      if (!slider) return;
-
-      const maxScroll = slider.scrollWidth - slider.clientWidth;
-      const newScroll = slider.scrollLeft - deltaX;
-
-      // Clamp between 0 and max
-      if (newScroll >= 0 && newScroll <= maxScroll) {
-        slider.scrollLeft = newScroll;
-      }
-    },
-    preventScrollOnSwipe: true,
-    trackMouse: true,
-    trackTouch: true,
-    delta: 10,
-  });
 
   useEffect(() => {
     if (!isAuthReady || hasFetched.current) return;

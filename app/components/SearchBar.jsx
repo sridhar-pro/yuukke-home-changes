@@ -117,7 +117,7 @@ const SearchBar = () => {
 
       {showDropdown && results.length > 0 && (
         <div
-          className="absolute w-[230px] md:w-[400px] mt-2 bg-white border rounded-xl shadow-2xl max-h-80 overflow-y-auto p-3"
+          className="absolute w-[250px] md:w-[400px] mt-2 bg-white border rounded-xl shadow-2xl max-h-80 overflow-y-auto p-5"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           <style jsx>{`
@@ -125,31 +125,29 @@ const SearchBar = () => {
               display: none;
             }
           `}</style>
-          <div className="w-full">
-            {results.map((product) => (
-              <div
-                key={product.id}
-                onClick={() => router.push(`/products/${product.slug}`)}
-                className="flex gap-3 md:gap-6 items-center px-0 py-3 p-0 md:p-5 bg-white rounded-xl transition-all cursor-pointer border-b border-gray-100 hover:border-gray-300"
-              >
-                <img
-                  src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
-                  alt={product.name}
-                  className="w-12 h-12 md:w-20 md:h-20 rounded-lg object-cover shadow-sm flex-shrink-0"
-                />
+          {results.map((product) => (
+            <div
+              key={product.id}
+              onClick={() => router.push(`/products/${product.slug}`)}
+              className="flex gap-4 md:gap-6 items-center p-4 md:p-5 bg-white rounded-xl transition-all cursor-pointer border-b border-gray-100 hover:border-gray-300"
+            >
+              <img
+                src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
+                alt={product.name}
+                className="w-14 h-14 md:w-20 md:h-20 rounded-lg object-cover shadow-sm flex-shrink-0"
+              />
 
-                <div className="flex flex-col justify-center flex-1">
-                  <h3 className="text-sm md:text-lg font-semibold text-gray-800 line-clamp-1">
-                    {product.name}
-                  </h3>
+              <div className="flex flex-col justify-center flex-1">
+                <h3 className="text-base md:text-lg font-semibold text-gray-800 line-clamp-1">
+                  {product.name}
+                </h3>
 
-                  <p className="text-xs md:text-base text-gray-500 mt-1 line-clamp-2">
-                    {product.details || "A perfect gift for any occasion."}
-                  </p>
-                </div>
+                <p className="text-sm md:text-base text-gray-500 mt-1 line-clamp-2">
+                  {product.details || "A perfect gift for any occasion."}
+                </p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
