@@ -87,7 +87,7 @@ const SearchBar = () => {
           className="p-2 hover:bg-gray-100 rounded-full transition"
           aria-label="Open search"
         >
-          <Search className="w-5 h-5 text-gray-600" />
+          <Search className="w-5 h-5 text-black cursor-pointer" />
         </button>
       )}
 

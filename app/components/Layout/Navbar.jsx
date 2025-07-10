@@ -336,14 +336,14 @@ export default function Navbar() {
                     "https://marketplace.yuukke.com/shop/login")
                 }
               >
-                <User className="w-4 h-4 text-black" />
+                <User className="w-5 h-5 text-black" />
               </button>
               <button
                 aria-label="Cart"
                 className="p-2 hover:bg-gray-100 rounded-full transition relative"
                 onClick={toggleCart}
               >
-                <ShoppingCart className="w-4 h-4 text-black cursor-pointer" />
+                <ShoppingCart className="w-5 h-5 text-black cursor-pointer" />
                 {cartItems.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItems.reduce((total, item) => total + item.qty, 0)}
@@ -374,7 +374,7 @@ export default function Navbar() {
                 {mobileMenuOpen ? (
                   <X className="w-4 h-4 text-gray-700" />
                 ) : (
-                  <Menu className="w-5 h-5 text-gray-700" />
+                  <Menu className="w-6 h-6 text-gray-900" />
                 )}
               </button>
             </div>
