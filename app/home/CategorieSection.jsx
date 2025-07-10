@@ -56,7 +56,6 @@ const CategoriesSection = () => {
     preventDefaultTouchmoveEvent: true,
     trackMouse: true,
   });
-
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -80,24 +79,8 @@ const CategoriesSection = () => {
 
     const fetchCategories = async () => {
       try {
-        const cachedData = localStorage.getItem("cachedCategories");
-        const cachedTimestamp = localStorage.getItem("categoriesTimestamp");
-
-        // 🧠 Use cached data if under 1hr (3600000ms)
-        if (
-          cachedData &&
-          cachedTimestamp &&
-          Date.now() - parseInt(cachedTimestamp) < 3600000
-        ) {
-          const parsedData = JSON.parse(cachedData);
-          setCategories(parsedData);
-          setDuplicatedCategories([...parsedData, ...parsedData]);
-          return;
-        }
-
         setLoading(true);
 
-        // 🚀 Fetch from API with retry logic
         const data = await fetchWithAuth("/api/homeCategory");
 
         const mapped = data?.map((cat) => ({
@@ -106,10 +89,6 @@ const CategoriesSection = () => {
           slug: cat.slug,
           subcategories: cat.subcategories || [],
         }));
-
-        // 💾 Store in localStorage
-        localStorage.setItem("cachedCategories", JSON.stringify(mapped));
-        localStorage.setItem("categoriesTimestamp", Date.now().toString());
 
         setCategories(mapped);
         setDuplicatedCategories([...mapped, ...mapped]);

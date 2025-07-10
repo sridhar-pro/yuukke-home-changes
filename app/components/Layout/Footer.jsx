@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
+import { useAuth } from "@/app/utils/AuthContext";
 
 export default function Footer() {
+  const { getValidToken } = useAuth();
   const [apiCategories, setApiCategories] = useState([]);
 
   const staticSection = {
@@ -28,14 +30,28 @@ export default function Footer() {
   };
 
   useEffect(() => {
-    const tryLoadFromCache = () => {
-      const cachedData = localStorage.getItem("cachedCategories");
-      if (!cachedData) return false;
+    const fetchWithAuth = async (url, retry = false) => {
+      const token = await getValidToken();
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
+      if (res.status === 401 && !retry) {
+        localStorage.removeItem("authToken");
+        return fetchWithAuth(url, true);
+      }
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return await res.json();
+    };
+
+    const fetchCategories = async () => {
       try {
-        const parsedData = JSON.parse(cachedData);
+        const data = await fetchWithAuth("/api/homeCategory");
 
-        const formattedData = parsedData
+        const formattedData = data
           .map((category) => {
             const validSubcategories = (category.subcategories || [])
               .filter((sub) => sub?.name && sub?.slug)
@@ -54,21 +70,13 @@ export default function Footer() {
           .filter((category) => category.links.length > 0);
 
         setApiCategories(formattedData);
-        return true;
       } catch (error) {
-        console.error("Error processing cached data:", error);
-        return false;
+        console.error("Error fetching and processing categories:", error);
       }
     };
 
-    if (!tryLoadFromCache()) {
-      const interval = setInterval(() => {
-        if (tryLoadFromCache()) clearInterval(interval);
-      }, 200); // Check every 200ms
-
-      return () => clearInterval(interval);
-    }
-  }, []);
+    fetchCategories();
+  }, [getValidToken]);
 
   const footerData = [staticSection, ...apiCategories];
   // console.log("Complete footer data:", footerData);

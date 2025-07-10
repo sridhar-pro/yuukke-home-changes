@@ -9,6 +9,7 @@ import SearchBar from "../SearchBar";
 import { useRouter } from "next/navigation";
 import { User, Heart, ShoppingCart } from "lucide-react";
 import CartSidebar from "../CartSideBar";
+import { useAuth } from "@/app/utils/AuthContext";
 
 const messages = [
   "Unlock exclusive savings: Enjoy 25% off on all Sanskruthi Solutions products!",
@@ -24,10 +25,13 @@ export default function Navbar() {
   const languages = ["EN", "GU", "HI", "TA", "TE"];
 
   const [productsOpen, setProductsOpen] = useState(false);
-  const [productCategories, setProductCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isOdopOpen, setIsOdopOpen] = useState(false);
+
+  const { getValidToken } = useAuth();
+
+  const [productCategories, setProductCategories] = useState([]);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
@@ -49,34 +53,43 @@ export default function Navbar() {
 
   const router = useRouter();
 
-  // Fetch categories with authentication
   useEffect(() => {
-    const tryLoadCategories = () => {
-      const cachedData = localStorage.getItem("cachedCategories");
-      if (!cachedData) return false;
+    const fetchWithAuth = async (url, retry = false) => {
+      const token = await getValidToken();
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
+      if (res.status === 401 && !retry) {
+        localStorage.removeItem("authToken");
+        return fetchWithAuth(url, true);
+      }
+
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      return await res.json();
+    };
+
+    const fetchCategories = async () => {
       try {
-        const parsedData = JSON.parse(cachedData);
-        setProductCategories(parsedData);
-        return true;
+        const data = await fetchWithAuth("/api/homeCategory");
+
+        const mapped = data?.map((cat) => ({
+          name: cat.name,
+          image: `https://marketplace.yuukke.com/assets/uploads/thumbs/${cat.image}`,
+          slug: cat.slug,
+          subcategories: cat.subcategories || [],
+        }));
+
+        setProductCategories(mapped);
       } catch (error) {
-        console.error("Error parsing cached categories:", error);
-        return false;
+        console.error("Error fetching product categories:", error);
       }
     };
 
-    // Try immediately
-    if (!tryLoadCategories()) {
-      const interval = setInterval(() => {
-        if (tryLoadCategories()) {
-          clearInterval(interval); // Stop polling once successful
-        }
-      }, 200); // Retry every 200ms
-
-      // Cleanup interval on unmount
-      return () => clearInterval(interval);
-    }
-  }, []);
+    fetchCategories();
+  }, [getValidToken]);
 
   // Marquee navigation handlers
   const handleNext = () => {
