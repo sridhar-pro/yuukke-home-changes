@@ -94,7 +94,7 @@ const SearchBar = () => {
       {/* Search Overlay (appears when active) */}
       {isActive && (
         <div
-          className="fixed inset-0 top-14 bg-transparent z-40"
+          className="fixed inset-0 bg-transparent z-40"
           onClick={() => {
             setIsActive(false);
             setShowDropdown(false);
@@ -102,7 +102,8 @@ const SearchBar = () => {
           }}
         >
           <div
-            className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4"
+            className="absolute top-[8.5rem] md:top-[4.5rem] left-1/2 transform -translate-x-1/2 w-full max-w-md px-4
+                     md:left-auto md:-right-12 md:transform-none md:max-w-lg"
             ref={containerRef}
             onClick={(e) => e.stopPropagation()}
           >
@@ -124,7 +125,7 @@ const SearchBar = () => {
                   setIsActive(false);
                   setShowDropdown(false);
                 }}
-                className="text-gray-400 hover:text-red-500 transition duration-200"
+                className="text-gray-400 hover:text-[#A00300] transition duration-200"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -132,7 +133,7 @@ const SearchBar = () => {
 
             {/* Dropdown Results */}
             {showDropdown && results.length > 0 && (
-              <div className="mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-96 overflow-y-auto animate-fade-in-fast">
+              <div className="mt-1 bg-white border border-gray-200 rounded-2xl shadow-2xl max-h-96 overflow-y-auto animate-fade-in-fast scrollbar-hide">
                 {results.map((product) => (
                   <div
                     key={product.id}
@@ -147,13 +148,13 @@ const SearchBar = () => {
                     <img
                       src={`https://marketplace.yuukke.com/assets/uploads/${product.image}`}
                       alt={product.name}
-                      className="w-20 h-20 object-cover rounded-xl shadow-sm"
+                      className="w-20 md:w-24 h-20 md:h-24 object-cover rounded-xl shadow-sm"
                     />
                     <div className="flex flex-col justify-center overflow-hidden">
-                      <p className="text-sm font-semibold text-gray-900 line-clamp-1">
+                      <p className="text-lg capitalize font-semibold text-gray-900 line-clamp-1">
                         {product.name}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                         {product.details || "Perfect for every occasion!"}
                       </p>
                     </div>
