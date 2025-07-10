@@ -82,18 +82,30 @@ const FeaturedProducts = () => {
   useEffect(() => {
     if (!isAuthReady || hasFetched.current) return;
 
-    const waitForToken = async () => {
-      let token;
-      for (let i = 0; i < 10; i++) {
-        token = await getValidToken();
-        if (token) return token;
-        await new Promise((res) => setTimeout(res, 150)); // total wait = ~1.5s max
+    const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+
+    const getTokenWithRetry = async (maxAttempts = 10, delay = 500) => {
+      let attempt = 0;
+      while (attempt < maxAttempts) {
+        const token = await getValidToken();
+
+        if (token && typeof token === "string" && token.length > 10) {
+          return token;
+        }
+
+        if (attempt === 5) {
+          localStorage.removeItem("authToken"); // force refresh if token exists but is trash
+        }
+
+        await wait(delay);
+        attempt++;
       }
-      throw new Error("Token not ready after retrying");
+
+      throw new Error("❌ Auth token unavailable after multiple retries.");
     };
 
     const fetchWithAuth = async (url, retry = false) => {
-      const token = await waitForToken();
+      const token = await getTokenWithRetry();
 
       const res = await fetch(url, {
         headers: {
@@ -103,7 +115,7 @@ const FeaturedProducts = () => {
 
       if (res.status === 401 && !retry) {
         localStorage.removeItem("authToken");
-        return fetchWithAuth(url, true); // Retry once
+        return fetchWithAuth(url, true); // Retry once silently
       }
 
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -114,11 +126,7 @@ const FeaturedProducts = () => {
       hasFetched.current = true;
 
       const fetchers = [
-        {
-          key: "gift",
-          url: "/api/giftproducts",
-          setter: setGiftProducts,
-        },
+        { key: "gift", url: "/api/giftproducts", setter: setGiftProducts },
         {
           key: "arrival",
           url: "/api/newarrival",
@@ -155,7 +163,7 @@ const FeaturedProducts = () => {
 
       fetchers.forEach(async ({ key, url, setter, cacheKey, timestampKey }) => {
         try {
-          // 🧠 Use cache for festival
+          // ⏳ Use cache for 'festival' category
           if (key === "festival" && cacheKey && timestampKey) {
             const cachedData = localStorage.getItem(cacheKey);
             const cacheTimestamp = localStorage.getItem(timestampKey);
@@ -178,17 +186,11 @@ const FeaturedProducts = () => {
           } else {
             const data = await fetchWithAuth(url);
             setter(Array.isArray(data) ? data : []);
-
-            // ✅ Log only the gift API response
-            if (key === "gift") {
-              // console.log("🎁 Gift Products Data:", data);
-            }
           }
         } catch (err) {
           console.error(`Fetch ${key} products error:`, err.message);
           setError(err.message);
 
-          // 📦 fallback cache for festival
           if (key === "festival" && cacheKey) {
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
@@ -202,7 +204,6 @@ const FeaturedProducts = () => {
       });
     };
 
-    // ⏱️ Start after slight delay
     const timer = setTimeout(() => {
       fetchAllData();
     }, 300);

@@ -62,12 +62,19 @@ export default function Navbar() {
       let attempt = 0;
       while (attempt < maxAttempts) {
         const token = await getValidToken();
-        if (token) return token;
 
-        console.warn(`⏳ Token attempt ${attempt + 1} failed. Retrying...`);
+        if (token && typeof token === "string" && token.length > 10) {
+          return token;
+        }
+
+        if (attempt === 5) {
+          localStorage.removeItem("authToken"); // force refresh if token exists but is trash
+        }
+
         await wait(delay);
         attempt++;
       }
+
       throw new Error("❌ Auth token unavailable after multiple retries.");
     };
 

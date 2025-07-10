@@ -87,12 +87,7 @@ const CategoriesSection = () => {
           return token;
         }
 
-        console.warn(
-          `⏳ Token attempt ${attempt + 1} failed or invalid. Retrying...`
-        );
-
         if (attempt === 5) {
-          console.warn("🧹 Clearing token after 5 failed attempts...");
           localStorage.removeItem("authToken"); // force refresh if token exists but is trash
         }
 
