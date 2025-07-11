@@ -5,7 +5,7 @@ import { AuthProvider } from "./utils/AuthContext";
 import LoaderWrapper from "./components/Loader/LoaderWrapper";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import ClarityScript from "./components/ClarityScript";
+import MobileBottomBar from "./components/MobileBottomBar";
 
 export const metadata = {
   title: "Yuukke",
@@ -41,11 +41,11 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="antialiased">
-        <ClarityScript />
         <LoaderWrapper>
           <AuthProvider>
             <Navbar />
             {children}
+            {/* <MobileBottomBar /> */}
             <Footer />
 
             <ToastContainer
