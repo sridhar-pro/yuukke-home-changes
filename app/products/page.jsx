@@ -111,6 +111,8 @@ const AllProductsPage = () => {
 
   const fetchProductsByCategory = async (
     categoryId = null,
+    subcategoryId = null,
+    subSubcategoryId = null,
     min = minPrice,
     max = maxPrice,
     inStock = false,
@@ -128,8 +130,8 @@ const AllProductsPage = () => {
         gifts_products: "",
         query: "",
         category: categoryId ? { id: categoryId } : {},
-        subcategory: "",
-        sub_subcategory: "",
+        subcategory: subcategoryId || "",
+        sub_subcategory: subSubcategoryId || "",
         brand: "",
         sorting: "name-asc",
         min_price: String(min),
@@ -168,43 +170,35 @@ const AllProductsPage = () => {
     <div className="min-h-screen bg-white px-4 md:px-10 py-6">
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Filters */}
-        <aside className="w-full lg:w-[280px] p-6 bg-white/80 backdrop-blur-md ">
-          <h2 className="text-2xl font-bold mb-8 uppercase text-gray-800 tracking-wide">
-            Filters
+        <aside className="w-full lg:w-[260px] bg-white h-full px-4 py-6  border-r border-gray-200">
+          {/* Sidebar Title */}
+          <h2 className="text-lg font-bold text-gray-800 mb-6 uppercase tracking-wide">
+            Product Filters
           </h2>
 
-          {/* Availability */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-8"
-          >
-            <h3 className="text-base font-semibold mb-4 text-gray-700 uppercase tracking-wide">
-              Availability
-            </h3>
+          {/* Organisation Section Style Heading */}
+          <p className="text-xs font-semibold text-gray-900 mb-2 px-2">
+            AVAILABILITY
+          </p>
 
+          {/* Availability Toggle */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 px-2"
+          >
             <motion.label
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md cursor-pointer transition-all group"
+              className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-gray-700 transition-all duration-300 cursor-pointer bg-gray-50 hover:bg-gray-100"
             >
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={inStockOnly}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setInStockOnly(checked);
-                  fetchProductsByCategory(null, minPrice, maxPrice, checked);
-                }}
-              />
-
+              <span>In Stock Only</span>
               <div
-                className={`w-6 h-6 flex items-center justify-center rounded-md transition-all duration-300 ${
+                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
                   inStockOnly
-                    ? "bg-gradient-to-br from-[#A00300] to-[#D44A47] text-white"
-                    : "border border-gray-300 bg-gray-50 group-hover:border-[#A00300]/40"
+                    ? "bg-gradient-to-br from-[#A00300] to-[#D44A47] border-[#A00300] shadow-inner"
+                    : "border-gray-300 bg-white"
                 }`}
               >
                 <AnimatePresence>
@@ -215,187 +209,157 @@ const AllProductsPage = () => {
                       exit={{ scale: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <Check className="h-4 w-4" />
+                      <Check className="h-3 w-3 text-white" />
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-
-              <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
-                In Stock Only
-              </span>
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={inStockOnly}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setInStockOnly(checked);
+                  fetchProductsByCategory(null, minPrice, maxPrice, checked);
+                }}
+              />
             </motion.label>
           </motion.div>
 
-          {/* Category Filter */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <h3 className="text-base font-semibold mb-4 text-gray-700 uppercase tracking-wide">
-              Shop by Category
-            </h3>
+          {/* Category Section Header */}
+          <p className="text-xs font-semibold text-gray-900 mb-2 px-2">
+            CATEGORIES
+          </p>
 
-            <div className="space-y-4">
-              {categories.map((cat, index) => {
-                const isSelected = selectedCategory === cat.id;
+          {/* Category List Styled Like Sidebar Accordion */}
+          <div className="space-y-2">
+            {categories.map((cat, index) => {
+              const isSelected = selectedCategory === cat.id;
 
-                return (
-                  <motion.div
-                    key={cat.id}
-                    layout
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="group relative"
+              return (
+                <motion.div
+                  key={cat.id}
+                  layout
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="rounded-md overflow-hidden"
+                >
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(isSelected ? null : cat.id);
+                      setSelectedSubcategory(null);
+                      fetchProductsByCategory(cat.id, minPrice, maxPrice);
+                    }}
+                    className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 ${
+                      isSelected
+                        ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
+                        : "bg-white text-gray-800 hover:bg-gray-100"
+                    }`}
                   >
-                    <div
-                      className={`bg-white rounded-xl border overflow-hidden transition-all ${
-                        isSelected
-                          ? "border-[#A00300]/40 shadow-lg"
-                          : "border-gray-200 hover:shadow"
+                    <div className="flex items-center gap-3">{cat.name}</div>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-300 ${
+                        isSelected ? "rotate-180" : ""
                       }`}
-                    >
-                      <motion.button
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        onClick={() => {
-                          setSelectedCategory(isSelected ? null : cat.id);
-                          setSelectedSubcategory(null);
-                          fetchProductsByCategory(cat.id, minPrice, maxPrice);
-                        }}
-                        className={`w-full flex items-center justify-between px-5 py-4 text-sm font-medium transition-all duration-300 ${
-                          isSelected
-                            ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isSelected && cat.subcategories?.length > 0 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="px-4 py-2 bg-gray-50"
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              isSelected ? "bg-white" : "bg-[#A00300]"
-                            }`}
-                          ></div>
-                          <span>{cat.name}</span>
-                        </div>
-                        <ChevronDown
-                          className={`w-4 h-4 transform transition-transform ${
-                            isSelected ? "rotate-180 text-white" : ""
-                          }`}
-                        />
-                      </motion.button>
+                        <ul className="space-y-2">
+                          {cat.subcategories.map((sub) => {
+                            const isSubSelected =
+                              selectedSubcategory === sub.id;
 
-                      {/* Subcategories */}
-                      <AnimatePresence>
-                        {isSelected && cat.subcategories?.length > 0 && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="px-4 pt-2 pb-3 bg-white border-t border-gray-100"
-                          >
-                            <ul className="space-y-2 text-sm">
-                              {cat.subcategories.map((sub, subIndex) => {
-                                const isSubSelected =
-                                  selectedSubcategory === sub.id;
-
-                                return (
-                                  <li key={sub.id}>
-                                    <motion.button
-                                      whileHover={{ x: 4 }}
-                                      whileTap={{ scale: 0.98 }}
-                                      onClick={() =>
-                                        setSelectedSubcategory(
-                                          isSubSelected ? null : sub.id
-                                        )
-                                      }
-                                      className={`w-full text-left px-3 py-2 rounded-md transition-all duration-200 ${
-                                        isSubSelected
-                                          ? "bg-[#A00300]/10 text-[#A00300]"
-                                          : "text-gray-700 hover:bg-gray-50"
+                            return (
+                              <li key={sub.id}>
+                                <button
+                                  onClick={() => {
+                                    setSelectedSubcategory(
+                                      isSubSelected ? null : sub.id
+                                    );
+                                    fetchProductsByCategory(
+                                      selectedCategory,
+                                      isSubSelected ? null : sub.id,
+                                      null,
+                                      minPrice,
+                                      maxPrice
+                                    );
+                                  }}
+                                >
+                                  <span>{sub.name}</span>
+                                  {sub.sub_subcategories?.length > 0 && (
+                                    <ChevronDown
+                                      className={`h-3 w-3 transition-transform ${
+                                        isSubSelected ? "rotate-180" : ""
                                       }`}
-                                    >
-                                      <div className="flex justify-between items-center">
-                                        <span>{sub.name}</span>
-                                        {sub.sub_subcategories?.length > 0 && (
-                                          <ChevronDown
-                                            className={`w-4 h-4 transition-transform ${
-                                              isSubSelected ? "rotate-180" : ""
-                                            }`}
-                                          />
-                                        )}
-                                      </div>
-                                    </motion.button>
+                                    />
+                                  )}
+                                </button>
 
-                                    {/* Sub-Subcategories */}
-                                    <AnimatePresence>
-                                      {isSubSelected &&
-                                        sub.sub_subcategories?.length > 0 && (
-                                          <motion.ul
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{
-                                              height: "auto",
-                                              opacity: 1,
-                                            }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="pl-5 mt-2 space-y-1"
-                                          >
-                                            {sub.sub_subcategories.map(
-                                              (subsub, subsubIndex) => (
-                                                <motion.li
-                                                  key={subsub.id}
-                                                  initial={{
-                                                    opacity: 0,
-                                                    x: -5,
-                                                  }}
-                                                  animate={{ opacity: 1, x: 0 }}
-                                                  transition={{
-                                                    duration: 0.2,
-                                                    delay: subsubIndex * 0.02,
-                                                  }}
-                                                >
-                                                  <motion.button
-                                                    whileHover={{ x: 2 }}
-                                                    onClick={() =>
-                                                      console.log(
-                                                        "Sub-sub selected:",
-                                                        subsub.slug
-                                                      )
-                                                    }
-                                                    className="flex items-center gap-2 px-2 py-1 text-sm text-gray-600 hover:text-[#A00300] transition-all rounded-md"
-                                                  >
-                                                    <Circle className="w-2 h-2 fill-current" />
-                                                    {subsub.name}
-                                                  </motion.button>
-                                                </motion.li>
-                                              )
-                                            )}
-                                          </motion.ul>
-                                        )}
-                                    </AnimatePresence>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
+                                {/* Sub-subcategory */}
+                                <AnimatePresence>
+                                  {isSubSelected &&
+                                    sub.sub_subcategories?.length > 0 && (
+                                      <motion.ul
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="pl-4 mt-1 space-y-1"
+                                      >
+                                        {sub.sub_subcategories.map((subsub) => (
+                                          <li key={subsub.id}>
+                                            <button
+                                              onClick={() => {
+                                                console.log(
+                                                  "Sub-sub selected:",
+                                                  subsub.slug
+                                                );
+                                                fetchProductsByCategory(
+                                                  selectedCategory,
+                                                  selectedSubcategory,
+                                                  subsub.id,
+                                                  minPrice,
+                                                  maxPrice
+                                                );
+                                              }}
+                                              className="text-xs flex items-center gap-2 text-gray-500 hover:text-[#A00300] transition-colors"
+                                            >
+                                              <Circle className="h-2 w-2 fill-current" />
+                                              {subsub.name}
+                                            </button>
+                                          </li>
+                                        ))}
+                                      </motion.ul>
+                                    )}
+                                </AnimatePresence>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </div>
         </aside>
 
         {/* Main Content */}
         <main className="flex-1">
           {/* Header Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-b-gray-200 pb-4">
             {/* Left: Filters + Sort */}
             <div className="flex items-center gap-3 flex-wrap">
               {/* <div className="flex items-center gap-2">
@@ -521,32 +485,14 @@ const AllProductsPage = () => {
           >
             {products.map((product, i) => {
               const imageUrl = `https://marketplace.yuukke.com/assets/uploads/${product.image}`;
-
-              const today = new Date();
-              const endDate = product.end_date
-                ? new Date(product.end_date)
-                : null;
-              const isPromoValid =
-                product.promo_price && endDate && endDate > today;
-
-              const actualPrice = isPromoValid
-                ? product.promo_price
-                : product.price;
-              const hasPromo = isPromoValid;
-
-              // 💡 Calculate discount percentage
-              const discountPercentage = hasPromo
-                ? Math.round(
-                    ((product.price - product.promo_price) / product.price) *
-                      100
-                  )
-                : 0;
+              const actualPrice = product.promo_price || product.price;
+              const hasPromo = !!product.promo_price;
 
               return (
                 <Link href={`/products/${product.slug}`} key={product.id || i}>
                   <motion.div
                     variants={itemVariants}
-                    className="bg-white rounded-lg p-3 transition cursor-pointer hover:shadow-md"
+                    className="bg-white rounded-lg p-3 transition cursor-pointer hover:shadow-sm"
                   >
                     <div className="relative aspect-square bg-gray-100 rounded mb-3 overflow-hidden">
                       <button
@@ -554,19 +500,19 @@ const AllProductsPage = () => {
                           (window.location.href =
                             "https://marketplace.yuukke.com/shop/login/")
                         }
-                        className="absolute top-2 right-2 bg-white rounded-full p-1 cursor-pointer z-20"
+                        className="absolute top-2 right-2 bg-white rounded-full p-1 cursor-pointer"
                       >
                         <Heart className="w-4 h-4 text-gray-600" />
                       </button>
 
-                      {/* Business Type Badges (slightly pushed down) */}
+                      {/* Business Type Badges */}
                       {product.business_type === "3" && (
                         <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
                           Premium
                         </span>
                       )}
                       {product.business_type === "2" && (
-                        <span className="absolute top-8 left-2 bg-green-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
+                        <span className="absolute top-2 left-2 bg-green-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
                           Verified
                         </span>
                       )}
@@ -584,25 +530,15 @@ const AllProductsPage = () => {
                     <div className="text-xs text-gray-500">
                       {product.subtitle || "Healthy Snack"}
                     </div>
-
-                    <div className="flex justify-between items-center gap-2 mt-1">
-                      <div className="flex gap-2 items-center">
-                        {hasPromo && (
-                          <span className="text-sm text-gray-400 line-through">
-                            ₹{parseFloat(product.price).toFixed(0)}
-                          </span>
-                        )}
-                        <span className="text-sm text-[#A00300] font-bold">
-                          ₹{parseFloat(actualPrice).toFixed(0)}
-                        </span>
-                      </div>
-
-                      {/* 🎯 Right-side Discount Badge */}
+                    <div className="flex gap-2 mt-1 items-center">
                       {hasPromo && (
-                        <span className="text-[#A00300] text-[10px] sm:text-xs font-bold px-2 py-[2px] whitespace-nowrap leading-tight">
-                          {discountPercentage}% OFF
+                        <span className="text-sm text-gray-400 line-through">
+                          ₹{parseFloat(product.price).toFixed(0)}
                         </span>
                       )}
+                      <span className="text-sm text-[#A00300] font-bold">
+                        ₹{parseFloat(actualPrice).toFixed(0)}
+                      </span>
                     </div>
                   </motion.div>
                 </Link>

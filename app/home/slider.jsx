@@ -86,7 +86,7 @@ export function ImagesSliderDemo() {
   return (
     <div
       {...swipeHandlers}
-      className="relative w-full h-[24vh] md:h-auto md:aspect-[16/5] overflow-hidden touch-pan-x"
+      className="relative w-full aspect-[540/283] md:h-auto md:aspect-[16/5] overflow-hidden touch-pan-x"
       style={{ perspective: "1000px" }}
     >
       {loading || isMobile === null ? (
