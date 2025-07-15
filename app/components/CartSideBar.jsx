@@ -509,7 +509,7 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
                   <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-1/2 bg-red-500 text-sm text-white py-3 rounded-lg hover:bg-gray-800 transition flex items-center justify-center"
+                    className="w-1/2 bg-red-500 text-sm text-white py-3 mb-8 md:mb-0 rounded-lg hover:bg-gray-800 transition flex items-center justify-center"
                     onClick={handleCheckout}
                   >
                     Proceed to Checkout

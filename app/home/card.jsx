@@ -114,7 +114,7 @@ export function WobbleCardDemo() {
 
       <div className="flex flex-col lg:flex-row gap-10 w-full mt-0 md:mt-6 px-4 sm:px-6 md:px-10 lg:px-20">
         {/* Left Card - 65% width on large screens */}
-        <div className="w-full lg:w-[65%] relative">
+        <div className="w-full lg:w-[65%] relative" translate="no">
           <WobbleCard containerClassName="min-h-[400px] max-h-[600px] md:max-h-[400px] h-full relative overflow-hidden">
             <div className="flex flex-col md:flex-row lg:flex-row justify-between items-center h-full w-full p-4 gap-6">
               <AnimatePresence mode="wait">

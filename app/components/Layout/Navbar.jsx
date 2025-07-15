@@ -166,7 +166,10 @@ export default function Navbar() {
   return (
     <>
       {/* Top Marquee */}
-      <div className="bg-black text-white text-[10px] md:text-sm lg:text-base h-16 md:h-10 flex items-center justify-center font-serif relative overflow-hidden">
+      <div
+        className="bg-black text-white text-[10px] md:text-sm lg:text-base h-16 md:h-10 flex items-center justify-center font-serif relative overflow-hidden"
+        translate="no"
+      >
         <button onClick={handlePrev} className="absolute left-5">
           <IoMdArrowRoundBack className="w-4 h-4 text-white opacity-90" />
         </button>

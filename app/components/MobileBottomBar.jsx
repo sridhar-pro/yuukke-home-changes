@@ -8,48 +8,47 @@ const MobileBottomBar = () => {
   const router = useRouter();
 
   return (
-    <>
-      {/* Bottom Nav Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] bg-white shadow-md border-t border-gray-200 md:hidden">
-        <div className="flex justify-around items-center py-2">
-          <button
-            onClick={() =>
-              router.push("https://marketplace.yuukke.com/shop/products")
-            }
-            className="flex flex-col items-center text-sm text-[#A00300]"
-          >
-            <ShoppingBag className="w-6 h-6 mb-1" strokeWidth={2} />
-            Products
-          </button>
-          <button
-            onClick={() => router.push("https://gift.yuukke.com/")}
-            className="flex flex-col items-center text-sm text-[#A00300]"
-          >
-            <Gift className="w-6 h-6 mb-1" strokeWidth={2} />
-            Gifts
-          </button>
-          <button
-            onClick={() =>
-              router.push("https://marketplace.yuukke.com/shop/deal")
-            }
-            className="flex flex-col items-center text-sm text-[#A00300]"
-          >
-            <BadgePercent className="w-6 h-6 mb-1" strokeWidth={2} />
-            Offers
-          </button>
+    <div className="fixed bottom-0 left-0 right-0 z-[100] bg-white shadow-[0_-1px_6px_rgba(0,0,0,0.05)] border-t border-gray-200 md:hidden">
+      <div className="flex justify-around items-center py-3">
+        <button
+          onClick={() =>
+            router.push("https://marketplace.yuukke.com/shop/products")
+          }
+          className="flex flex-col items-center text-xs text-[#A00300] gap-1"
+        >
+          <ShoppingBag className="w-5 h-5" strokeWidth={2} />
+          <span className="text-black">Products</span>
+        </button>
 
-          <button
-            onClick={() =>
-              router.push("https://marketplace.yuukke.com/shop/login")
-            }
-            className="flex flex-col items-center text-sm text-[#A00300]"
-          >
-            <User className="w-6 h-6 mb-1" strokeWidth={2} />
-            Login
-          </button>
-        </div>
+        <button
+          onClick={() => router.push("https://gift.yuukke.com/")}
+          className="flex flex-col items-center text-xs text-[#A00300] gap-1"
+        >
+          <Gift className="w-5 h-5" strokeWidth={2} />
+          <span className="text-black">Gifts</span>
+        </button>
+
+        <button
+          onClick={() =>
+            router.push("https://marketplace.yuukke.com/shop/deal")
+          }
+          className="flex flex-col items-center text-xs text-[#A00300] gap-1"
+        >
+          <BadgePercent className="w-5 h-5" strokeWidth={2} />
+          <span className="text-black">Offers</span>
+        </button>
+
+        <button
+          onClick={() =>
+            router.push("https://marketplace.yuukke.com/shop/login")
+          }
+          className="flex flex-col items-center text-xs text-[#A00300] gap-1"
+        >
+          <User className="w-5 h-5" strokeWidth={2} />
+          <span className="text-black">Login</span>
+        </button>
       </div>
-    </>
+    </div>
   );
 };
 

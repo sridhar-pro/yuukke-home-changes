@@ -273,7 +273,10 @@ export default function Footer() {
       </div>
 
       {/* Bottom Footer Bar */}
-      <div className="bg-gradient-to-r from-blue-950 to-[#911439] text-white text-sm px-4 sm:px-8 md:px-16 lg:px-20 py-6">
+      <div
+        className="bg-gradient-to-r from-blue-950 to-[#911439] text-white text-sm px-4 sm:px-8 md:px-16 lg:px-20 py-6"
+        translate="no"
+      >
         <div className="flex flex-col gap-4 md:gap-6 md:flex-row md:items-center md:justify-between text-center md:text-left">
           {/* Copyright */}
           <div className="text-xs sm:text-sm">
