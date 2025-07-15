@@ -83,6 +83,16 @@ export function ImagesSliderDemo() {
     exit: { opacity: 0, scale: 1.02 },
   };
 
+  useEffect(() => {
+    if (images.length <= 1) return; // Don't auto-slide if only 1 image
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, 5000); // Change every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [images, currentIndex]);
+
   return (
     <div
       {...swipeHandlers}

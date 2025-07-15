@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Check,
   Circle,
+  Tag,
+  Dot,
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
 import Link from "next/link";
@@ -111,8 +113,7 @@ const AllProductsPage = () => {
 
   const fetchProductsByCategory = async (
     categoryId = null,
-    subcategoryId = null,
-    subSubcategoryId = null,
+    level = "category",
     min = minPrice,
     max = maxPrice,
     inStock = false,
@@ -126,12 +127,10 @@ const AllProductsPage = () => {
       const limit = 24;
       const offset = (page - 1) * limit;
 
+      // Base filters
       const filters = {
         gifts_products: "",
         query: "",
-        category: categoryId ? { id: categoryId } : {},
-        subcategory: subcategoryId || "",
-        sub_subcategory: subSubcategoryId || "",
         brand: "",
         sorting: "name-asc",
         min_price: String(min),
@@ -142,6 +141,11 @@ const AllProductsPage = () => {
         offset: String(offset),
         in_stock: inStock ? "1" : "0",
       };
+
+      // Only add category filters if categoryId is provided
+      if (categoryId) {
+        filters[level] = { id: categoryId };
+      }
 
       const response = await fetch("/api/getProducts", {
         method: "POST",
@@ -154,17 +158,34 @@ const AllProductsPage = () => {
 
       const result = await response.json();
 
+      console.groupCollapsed(`📦 API Response for Page ${page}`);
+      console.log("🔢 Page Requested:", page);
+      console.log("📂 Full Response:", result);
+      console.log("🛍️ Products:", result.products);
+      console.log("ℹ️ Info:", result.info);
+      console.log("🧪 Filters Used:", result.filters);
+      console.groupEnd();
+
       if (result?.products) {
         setProducts(result.products);
-        setTotalPages(Number(result.info.total_page || 1)); // ✅ update totalPages
-        setCurrentPage(Number(result.info.page || 1)); // ✅ sync current page
+        setTotalPages(Number(result.info?.total_page || 1));
+        setCurrentPage(Number(result.info?.page || 1));
       } else {
+        console.warn("⚠️ No products found for this page/filter combo.");
         setProducts([]);
       }
     } catch (err) {
-      console.error("❌ Error fetching products:", err);
+      console.error("❌ Error fetching products:", err.message || err);
     }
   };
+
+  const decodeHTMLEntities = (str) =>
+    str
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'");
 
   return (
     <div className="min-h-screen bg-white px-4 md:px-10 py-6">
@@ -244,109 +265,217 @@ const AllProductsPage = () => {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="rounded-md overflow-hidden"
+                  className="group"
                 >
+                  {/* Main Category Button */}
                   <button
                     onClick={() => {
                       setSelectedCategory(isSelected ? null : cat.id);
                       setSelectedSubcategory(null);
-                      fetchProductsByCategory(cat.id, minPrice, maxPrice);
+                      fetchProductsByCategory(
+                        cat.id,
+                        "category",
+                        minPrice,
+                        maxPrice
+                      );
                     }}
-                    className={`flex items-center justify-between w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 ${
+                    className={`
+                    relative flex items-center justify-between w-full px-4 py-3.5 text-sm font-semibold
+                    rounded-xl transition-all duration-300 ease-out
+                    ${
                       isSelected
-                        ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
-                        : "bg-white text-gray-800 hover:bg-gray-100"
-                    }`}
+                        ? "bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/25"
+                        : "bg-transparent text-slate-700 hover:bg-slate-100/80 hover:shadow-md hover:shadow-slate-200/50"
+                    }
+                    border border-transparent hover:border-slate-300/60
+                    backdrop-blur-sm
+                  `}
                   >
-                    <div className="flex items-center gap-3">{cat.name}</div>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform duration-300 ${
-                        isSelected ? "rotate-180" : ""
-                      }`}
-                    />
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`
+                      p-1.5 rounded-lg transition-colors duration-300
+                     
+                    `}
+                      >
+                        {/* <Tag
+                          className={`h-3.5 w-3.5 ${
+                            isSelected ? "text-white" : "text-slate-600"
+                          }`}
+                        /> */}
+                      </div>
+                      <span className="font-medium tracking-wide uppercase text-left">
+                        {cat.name}
+                      </span>
+                    </div>
+
+                    <motion.div
+                      animate={{ rotate: isSelected ? 180 : 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                      <ChevronDown
+                        className={`h-4 w-4 ${
+                          isSelected ? "text-white/80" : "text-slate-500"
+                        }`}
+                      />
+                    </motion.div>
+
+                    {/* Subtle glow effect for selected state */}
+                    {isSelected && (
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-slate-900/20 to-transparent blur-xl -z-10" />
+                    )}
                   </button>
 
+                  {/* Subcategories */}
                   <AnimatePresence>
                     {isSelected && cat.subcategories?.length > 0 && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="px-4 py-2 bg-gray-50"
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
                       >
-                        <ul className="space-y-2">
-                          {cat.subcategories.map((sub) => {
-                            const isSubSelected =
-                              selectedSubcategory === sub.id;
+                        <div className="pt-2 pb-1 px-2">
+                          <div className="space-y-1">
+                            {cat.subcategories.map((sub, subIndex) => {
+                              const isSubSelected =
+                                selectedSubcategory === sub.id;
 
-                            return (
-                              <li key={sub.id}>
-                                <button
-                                  onClick={() => {
-                                    setSelectedSubcategory(
-                                      isSubSelected ? null : sub.id
-                                    );
-                                    fetchProductsByCategory(
-                                      selectedCategory,
-                                      isSubSelected ? null : sub.id,
-                                      null,
-                                      minPrice,
-                                      maxPrice
-                                    );
+                              return (
+                                <motion.div
+                                  key={sub.id}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{
+                                    duration: 0.2,
+                                    delay: subIndex * 0.05,
                                   }}
                                 >
-                                  <span>{sub.name}</span>
-                                  {sub.sub_subcategories?.length > 0 && (
-                                    <ChevronDown
-                                      className={`h-3 w-3 transition-transform ${
-                                        isSubSelected ? "rotate-180" : ""
-                                      }`}
-                                    />
-                                  )}
-                                </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedSubcategory(
+                                        isSubSelected ? null : sub.id
+                                      );
+                                      setSelectedCategory(cat.id);
+                                      if (!isSubSelected) {
+                                        fetchProductsByCategory(
+                                          sub.id,
+                                          "subcategory",
+                                          minPrice,
+                                          maxPrice
+                                        );
+                                      }
+                                    }}
+                                    className={`
+                                    flex justify-between items-center w-full text-sm rounded-lg px-4 py-2.5
+                                    transition-all duration-200 ease-out group/sub
+                                    ${
+                                      isSubSelected
+                                        ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border border-red-200/60 shadow-sm"
+                                        : "hover:bg-slate-50 text-slate-600 hover:text-slate-800 border border-transparent hover:border-slate-200/60"
+                                    }
+                                  `}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div
+                                        className={`
+                                      w-1.5 h-1.5 rounded-full transition-colors duration-200
+                                      ${
+                                        isSubSelected
+                                          ? "bg-red-500"
+                                          : "bg-slate-300 group-hover/sub:bg-slate-400"
+                                      }
+                                    `}
+                                      />
+                                      <span className="font-medium capitalize text-left">
+                                        {sub.name}
+                                      </span>
+                                    </div>
 
-                                {/* Sub-subcategory */}
-                                <AnimatePresence>
-                                  {isSubSelected &&
-                                    sub.sub_subcategories?.length > 0 && (
-                                      <motion.ul
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: "auto", opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="pl-4 mt-1 space-y-1"
+                                    {sub.sub_subcategories?.length > 0 && (
+                                      <motion.div
+                                        animate={{
+                                          rotate: isSubSelected ? 180 : 0,
+                                        }}
+                                        transition={{ duration: 0.2 }}
                                       >
-                                        {sub.sub_subcategories.map((subsub) => (
-                                          <li key={subsub.id}>
-                                            <button
-                                              onClick={() => {
-                                                console.log(
-                                                  "Sub-sub selected:",
-                                                  subsub.slug
-                                                );
-                                                fetchProductsByCategory(
-                                                  selectedCategory,
-                                                  selectedSubcategory,
-                                                  subsub.id,
-                                                  minPrice,
-                                                  maxPrice
-                                                );
-                                              }}
-                                              className="text-xs flex items-center gap-2 text-gray-500 hover:text-[#A00300] transition-colors"
-                                            >
-                                              <Circle className="h-2 w-2 fill-current" />
-                                              {subsub.name}
-                                            </button>
-                                          </li>
-                                        ))}
-                                      </motion.ul>
+                                        <ChevronDown
+                                          className={`h-3 w-3 transition-colors ${
+                                            isSubSelected
+                                              ? "text-red-500"
+                                              : "text-slate-400 group-hover/sub:text-slate-600"
+                                          }`}
+                                        />
+                                      </motion.div>
                                     )}
-                                </AnimatePresence>
-                              </li>
-                            );
-                          })}
-                        </ul>
+                                  </button>
+
+                                  {/* Sub-subcategories */}
+                                  <AnimatePresence>
+                                    {isSubSelected &&
+                                      sub.sub_subcategories?.length > 0 && (
+                                        <motion.div
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{
+                                            height: "auto",
+                                            opacity: 1,
+                                          }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2 }}
+                                          className="overflow-hidden"
+                                        >
+                                          <div className="pl-6 pr-2 pt-1 pb-2">
+                                            <div className="space-y-1">
+                                              {sub.sub_subcategories.map(
+                                                (subsub, subsubIndex) => (
+                                                  <motion.button
+                                                    key={subsub.id}
+                                                    initial={{
+                                                      opacity: 0,
+                                                      x: -8,
+                                                    }}
+                                                    animate={{
+                                                      opacity: 1,
+                                                      x: 0,
+                                                    }}
+                                                    transition={{
+                                                      duration: 0.15,
+                                                      delay: subsubIndex * 0.03,
+                                                    }}
+                                                    onClick={() => {
+                                                      fetchProductsByCategory(
+                                                        subsub.id,
+                                                        "sub_subcategory",
+                                                        minPrice,
+                                                        maxPrice
+                                                      );
+                                                    }}
+                                                    className="
+                                                    flex items-center justify-start gap-2.5 w-full text-left text-xs px-3 py-2 rounded-md
+                                                    text-slate-500 hover:text-red-600 hover:bg-red-50/80
+                                                    transition-all duration-150 ease-out group/subsub
+                                                  "
+                                                  >
+                                                    <Dot className="h-3 w-3 text-slate-300 group-hover/subsub:text-red-400 transition-colors" />
+                                                    <span className="font-medium capitalize">
+                                                      {decodeHTMLEntities(
+                                                        subsub.name
+                                                      )}
+                                                    </span>
+                                                  </motion.button>
+                                                )
+                                              )}
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                  </AnimatePresence>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -485,8 +614,13 @@ const AllProductsPage = () => {
           >
             {products.map((product, i) => {
               const imageUrl = `https://marketplace.yuukke.com/assets/uploads/${product.image}`;
-              const actualPrice = product.promo_price || product.price;
-              const hasPromo = !!product.promo_price;
+              const now = new Date();
+              const promoEnd = new Date(product.end_date);
+              const isPromoValid = product.promo_price && promoEnd > now;
+
+              const actualPrice = isPromoValid
+                ? product.promo_price
+                : product.price;
 
               return (
                 <Link href={`/products/${product.slug}`} key={product.id || i}>
@@ -494,6 +628,7 @@ const AllProductsPage = () => {
                     variants={itemVariants}
                     className="bg-white rounded-lg p-3 transition cursor-pointer hover:shadow-sm"
                   >
+                    {/* Image + badge section (unchanged) */}
                     <div className="relative aspect-square bg-gray-100 rounded mb-3 overflow-hidden">
                       <button
                         onClick={() =>
@@ -505,7 +640,6 @@ const AllProductsPage = () => {
                         <Heart className="w-4 h-4 text-gray-600" />
                       </button>
 
-                      {/* Business Type Badges */}
                       {product.business_type === "3" && (
                         <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
                           Premium
@@ -524,14 +658,12 @@ const AllProductsPage = () => {
                       />
                     </div>
 
-                    <div className="text-sm font-semibold text-gray-900 truncate">
+                    <div className="text-sm font-semibold text-gray-900 truncate capitalize">
                       {product.name}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {product.subtitle || "Healthy Snack"}
-                    </div>
+
                     <div className="flex gap-2 mt-1 items-center">
-                      {hasPromo && (
+                      {isPromoValid && (
                         <span className="text-sm text-gray-400 line-through">
                           ₹{parseFloat(product.price).toFixed(0)}
                         </span>

@@ -773,15 +773,15 @@ const FeaturedProducts = () => {
                         return allImages.map((img, i) => (
                           <div
                             key={i}
-                            onClick={() => setMainImage(img)}
-                            className={`relative w-12 h-12 md:w-16 md:h-16 rounded-lg border-2 transition-all duration-300 cursor-pointer overflow-hidden shadow-sm  ${
-                              img === mainImage
+                            onClick={() => setMainImage(getImageSrc(img))} // 👈 Switch to full-size here
+                            className={`relative w-12 h-12 md:w-16 md:h-16 rounded-lg border-2 transition-all duration-300 cursor-pointer overflow-hidden shadow-sm ${
+                              getImageSrc(img) === mainImage
                                 ? "border-[#A00300] ring-1 ring-[#A00300]"
                                 : "border-gray-200"
                             }`}
                           >
                             <Image
-                              src={img}
+                              src={getImageSrcThumbs(img)} // 👈 Use thumbnail version here
                               alt={`thumb-${i}`}
                               fill
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

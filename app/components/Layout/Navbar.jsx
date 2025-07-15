@@ -1,5 +1,5 @@
 "use client";
-import { ChevronDown, Menu, X, MapPin, Clipboard } from "lucide-react";
+import { ChevronDown, Globe, Menu, X } from "lucide-react";
 import { IoMdArrowRoundForward, IoMdArrowRoundBack } from "react-icons/io";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -17,15 +17,10 @@ const messages = [
 ];
 
 export default function Navbar() {
-  const [language, setLanguage] = useState("EN");
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [origin, setOrigin] = useState("");
-  const languages = ["EN", "GU", "HI", "TA", "TE"];
 
-  const [productsOpen, setProductsOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isOdopOpen, setIsOdopOpen] = useState(false);
 
@@ -52,6 +47,73 @@ export default function Navbar() {
   };
 
   const router = useRouter();
+
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  useEffect(() => {
+    // Initialize Google Translate only once
+    if (!window.googleTranslateElementInit) {
+      window.googleTranslateElementInit = () => {
+        new window.google.translate.TranslateElement(
+          {
+            pageLanguage: "en",
+            includedLanguages: "ta",
+            layout:
+              window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false,
+          },
+          "google_translate_element"
+        );
+      };
+
+      // Load script only if not already loaded
+      if (!document.getElementById("google-translate-script")) {
+        const script = document.createElement("script");
+        script.id = "google-translate-script";
+        script.src =
+          "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    }
+  }, []);
+
+  const translateToTamil = () => {
+    if (isTranslating) return;
+    setIsTranslating(true);
+
+    // Create container if it doesn't exist
+    if (!document.getElementById("google_translate_element")) {
+      const div = document.createElement("div");
+      div.id = "google_translate_element";
+      div.style.display = "none";
+      document.body.appendChild(div);
+    }
+
+    // Wait for Google Translate to load
+    const checkAndTranslate = (attempts = 0) => {
+      if (attempts > 10) {
+        setIsTranslating(false);
+        return;
+      }
+
+      if (window.google && window.google.translate) {
+        const select = document.querySelector(".goog-te-combo");
+        if (select) {
+          select.value = "ta";
+          const event = new Event("change", { bubbles: true });
+          select.dispatchEvent(event);
+          setIsTranslating(false);
+        } else {
+          setTimeout(() => checkAndTranslate(attempts + 1), 300);
+        }
+      } else {
+        setTimeout(() => checkAndTranslate(attempts + 1), 300);
+      }
+    };
+
+    checkAndTranslate();
+  };
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -275,6 +337,8 @@ export default function Navbar() {
           <div className="flex items-center space-x-2 ml-3 md:ml-0">
             <div className="hidden md:flex space-x-6">
               <SearchBar />
+
+              {/* Profile/Login */}
               <button
                 aria-label="Profile"
                 className="p-2 hover:bg-gray-100 rounded-full transition"
@@ -286,21 +350,27 @@ export default function Navbar() {
                 <User className="w-5 h-5 text-black cursor-pointer" />
               </button>
 
+              {/* 🌐 Language Switcher (Lucide Globe) */}
+              <button
+                onClick={translateToTamil}
+                disabled={isTranslating}
+                className="p-2 hover:bg-gray-100 rounded-full transition"
+                title="Translate to Tamil"
+                aria-label="Translate to Tamil"
+              >
+                <Globe className="w-5 h-5 text-gray-700" />
+              </button>
+
+              {/* Wishlist */}
               <a
                 href="https://marketplace.yuukke.com/shop/wishlist"
                 aria-label="Favorites"
                 className="p-2 hover:bg-gray-100 rounded-full transition"
               >
-                <Heart className="w-5 h-5 text-black " />
+                <Heart className="w-5 h-5 text-black" />
               </a>
 
-              {/* <button
-                aria-label="Cart"
-                className="p-2 hover:bg-gray-100 rounded-full transition"
-              >
-                <ShoppingCart className="w-5 h-5 text-black cursor-pointer" />
-              </button> */}
-
+              {/* Cart */}
               <button
                 aria-label="Cart"
                 className="p-2 hover:bg-gray-100 rounded-full transition relative"
@@ -314,29 +384,26 @@ export default function Navbar() {
                 )}
               </button>
 
-              {/* Overlay and CartSidebar - appears when cart is open */}
-              <>
-                {/* Always mounted */}
-                <CartSidebar
-                  isOpen={isCartOpen}
-                  onClose={() => setIsCartOpen(false)}
-                  cartItems={cartItems}
-                  setCartItems={setCartItems}
-                />
-              </>
+              <CartSidebar
+                isOpen={isCartOpen}
+                onClose={() => setIsCartOpen(false)}
+                cartItems={cartItems}
+                setCartItems={setCartItems}
+              />
             </div>
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-4 px-2 py-1">
               <SearchBar />
+              {/* 🌐 Language Switcher (Lucide Globe) */}
               <button
-                aria-label="Profile"
-                onClick={() =>
-                  (window.location.href =
-                    "https://marketplace.yuukke.com/shop/login")
-                }
+                onClick={translateToTamil}
+                disabled={isTranslating}
+                className="p-2 hover:bg-gray-100 rounded-full transition"
+                title="Translate to Tamil"
+                aria-label="Translate to Tamil"
               >
-                <User className="w-5 h-5 text-black" />
+                <Globe className="w-5 h-5 text-gray-900" />
               </button>
               <button
                 aria-label="Cart"
@@ -433,15 +500,16 @@ export default function Navbar() {
             </div>
 
             <a
-              href={`${
-                process.env.NEXT_PUBLIC_BASE_URL
-              }/shop/deal?returnUrl=${encodeURIComponent(origin + "/offers")}`}
+              href="https://marketplace.yuukke.com/shop/deal"
               className="block py-1 hover:text-black transition"
             >
               Offers
             </a>
 
-            <Link href="/" className="block py-1 hover:text-black transition">
+            <Link
+              href="https://gift.yuukke.com/"
+              className="block py-1 hover:text-black transition"
+            >
               Gifts
             </Link>
           </div>
