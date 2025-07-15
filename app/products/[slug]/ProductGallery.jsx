@@ -706,7 +706,7 @@ export default function ProductGalleryPage() {
                 </div>
 
                 {/* Price Section */}
-                <div className="space-y-4 mt-2">
+                <div className="space-y-4 mt-2" translate="no">
                   <div className="items-end gap-3 lg:flex md:hidden">
                     <div className="flex items-baseline gap-1">
                       <IndianRupee className="w-6 h-6 text-[#A00300]" />
@@ -813,7 +813,7 @@ export default function ProductGalleryPage() {
               </div>
 
               {/* Price Section */}
-              <div className="space-y-4 ">
+              <div className="space-y-4 " translate="no">
                 <div className="items-end gap-3 hidden md:flex">
                   <div className="flex items-baseline gap-1">
                     <IndianRupee className="w-6 h-6 text-[#A00300]" />
@@ -1117,7 +1117,10 @@ export default function ProductGalleryPage() {
                               {item.name}
                             </h4>
 
-                            <div className="flex items-center gap-1 text-sm text-gray-800 mt-auto leading-tight">
+                            <div
+                              className="flex items-center gap-1 text-sm text-gray-800 mt-auto leading-tight"
+                              translate="no"
+                            >
                               <IndianRupee className="w-4 h-4 text-[#A00300]" />
 
                               {item.promo_price !== null &&

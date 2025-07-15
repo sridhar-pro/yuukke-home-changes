@@ -167,7 +167,7 @@ export default function Navbar() {
     <>
       {/* Top Marquee */}
       <div
-        className="bg-black text-white text-[10px] md:text-sm lg:text-base h-16 md:h-10 flex items-center justify-center font-serif relative overflow-hidden"
+        className="bg-black text-white text-xs md:text-sm lg:text-base h-16 md:h-10 flex items-center justify-center font-serif relative overflow-hidden"
         translate="no"
       >
         <button onClick={handlePrev} className="absolute left-5">
@@ -195,8 +195,8 @@ export default function Navbar() {
       </div>
 
       {/* Main Navbar */}
-      <nav className="bg-[#f9f9f959] shadow-sm px-6 py-3 top-0 z-[100] font-serif">
-        <div className="px-3 flex justify-between items-center mt-0 md:mt-5 mb-0 md:mb-5">
+      <nav className="bg-[#f9f9f959] shadow-sm px-0 lg:px-6 py-0  md:py-3 top-0 z-[100] font-serif">
+        <div className="px-3 flex justify-around md:justify-between items-center mt-0 md:mt-5 mb-0 md:mb-5">
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <div className="relative w-[125px] h-[50px] lg:w-[170px] lg:h-[45px]">
@@ -343,26 +343,32 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center gap-4 px-2 py-1">
-              <SearchBar />
+            <div className="md:hidden flex items-center gap-2 px-2 py-1.5">
+              {/* ✅ Search bar takes flexible width */}
+              <div className="flex-1">
+                <SearchBar />
+              </div>
 
-              {/* 🌐 Language Switcher (Lucide Globe) */}
-              <LanguageSwitcher />
+              {/* ✅ Language Switcher */}
+              <div className="flex-shrink-0">
+                <LanguageSwitcher />
+              </div>
 
+              {/* ✅ Cart Icon */}
               <button
                 aria-label="Cart"
                 className="p-2 hover:bg-gray-100 rounded-full transition relative"
                 onClick={toggleCart}
               >
-                <ShoppingCart className="w-5 h-5 text-black cursor-pointer" />
+                <ShoppingCart className="w-4 h-4 text-black" />
                 {cartItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
                     {cartItems.reduce((total, item) => total + item.qty, 0)}
                   </span>
                 )}
               </button>
 
-              {/* Overlay and CartSidebar - appears when cart is open */}
+              {/* ✅ Cart Sidebar */}
               {isCartOpen && (
                 <>
                   <div
@@ -370,7 +376,7 @@ export default function Navbar() {
                     onClick={() => setIsCartOpen(false)}
                   />
                   <CartSidebar
-                    isOpen={isCartOpen} // pass state here
+                    isOpen={isCartOpen}
                     onClose={() => setIsCartOpen(false)}
                     cartItems={cartItems}
                     setCartItems={setCartItems}
@@ -378,14 +384,16 @@ export default function Navbar() {
                 </>
               )}
 
+              {/* ✅ Menu Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle Menu"
+                className="p-2 rounded-full hover:bg-gray-100 transition"
               >
                 {mobileMenuOpen ? (
                   <X className="w-4 h-4 text-gray-700" />
                 ) : (
-                  <Menu className="w-6 h-6 text-gray-900" />
+                  <Menu className="w-5 h-5 text-gray-900" />
                 )}
               </button>
             </div>

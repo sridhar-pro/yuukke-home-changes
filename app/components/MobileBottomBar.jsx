@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { User, Gift, ShoppingBag, BadgePercent } from "lucide-react";
+import { User, Gift, ShoppingBag, BadgePercent, Tag } from "lucide-react";
 
 const MobileBottomBar = () => {
   const router = useRouter();
@@ -34,7 +34,7 @@ const MobileBottomBar = () => {
           }
           className="flex flex-col items-center text-xs text-[#A00300] gap-1"
         >
-          <BadgePercent className="w-5 h-5" strokeWidth={2} />
+          <Tag className="w-5 h-5" strokeWidth={2} />
           <span className="text-black">Offers</span>
         </button>
 

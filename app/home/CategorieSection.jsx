@@ -145,15 +145,11 @@ const CategoriesSection = () => {
       </div>
 
       {/* Slider */}
-      <div className="relative overflow-x-auto overflow-y-hidden max-w-[95rem] mx-auto scrollbar-hide">
-        {/* Gradient edge masks */}
-        {/* <div className="hidden sm:block pointer-events-none absolute top-0 left-0 w-20 h-full z-20 bg-gradient-to-r from-white via-white/80 to-transparent" />
-      <div className="hidden sm:block pointer-events-none absolute top-0 right-0 w-20 h-full z-20 bg-gradient-to-l from-white via-white/80 to-transparent" /> */}
-
+      <div className="relative overflow-hidden max-w-[95rem] mx-auto scrollbar-hide h-[calc(100%-1px)]">
         {/* Scrolling Categories */}
         <div
           ref={sliderRef}
-          className="flex gap-x-8 sm:gap-x-10 items-center px-2 cursor-grab active:cursor-grabbing overflow-x-auto scroll-smooth scrollbar-hide snap-x snap-mandatory"
+          className="flex gap-x-8 sm:gap-x-10 items-center px-2 cursor-grab active:cursor-grabbing overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide snap-x snap-mandatory"
           style={{ userSelect: isDragging ? "none" : "auto" }}
         >
           {loading &&

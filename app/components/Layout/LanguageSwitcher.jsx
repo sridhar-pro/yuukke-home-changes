@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Globe } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 const langMap = {
   en: "EN",
@@ -28,16 +29,10 @@ const LanguageSwitcher = () => {
   }, []);
 
   // 🌐 Inject Google Translate script
+  // 🌐 Inject Google Translate script AND re-initialize on route changes
   useEffect(() => {
-    const addGoogleTranslateScript = () => {
-      if (window.google?.translate?.TranslateElement) return;
-
-      const script = document.createElement("script");
-      script.src =
-        "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-      document.body.appendChild(script);
-
-      window.googleTranslateElementInit = () => {
+    const loadGoogleTranslate = () => {
+      if (window.google?.translate?.TranslateElement) {
         new window.google.translate.TranslateElement(
           {
             pageLanguage: "en",
@@ -48,10 +43,21 @@ const LanguageSwitcher = () => {
           },
           "google_translate_element"
         );
-      };
+      }
     };
 
-    addGoogleTranslateScript();
+    // 👀 Create script if not already present
+    if (!window.google?.translate?.TranslateElement) {
+      const script = document.createElement("script");
+      script.src =
+        "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      document.body.appendChild(script);
+
+      window.googleTranslateElementInit = loadGoogleTranslate;
+    } else {
+      // Already injected, just re-init
+      loadGoogleTranslate();
+    }
   }, []);
 
   // 📡 Get current language from cookie
@@ -66,28 +72,49 @@ const LanguageSwitcher = () => {
     if (lang === "en") {
       document.cookie =
         "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      location.href = window.location.pathname;
-      return;
-    }
-
-    const googleFrame = document.querySelector("iframe.goog-te-menu-frame");
-    if (googleFrame) {
-      const innerDoc =
-        googleFrame.contentDocument || googleFrame.contentWindow.document;
-      const spanTags = innerDoc.querySelectorAll(
-        ".goog-te-menu2-item span.text"
-      );
-
-      Array.from(spanTags).forEach((el) => {
-        if (el.innerHTML.toLowerCase().includes(lang)) {
-          el.click();
-        }
-      });
     } else {
-      document.cookie = `googtrans=/en/${lang}`;
-      location.reload();
+      document.cookie = `googtrans=/en/${lang}; path=/;`;
     }
+
+    // 🔁 Force a re-translation
+    setTimeout(() => {
+      const event = document.createEvent("HTMLEvents");
+      event.initEvent("change", true, true);
+      const select = document.querySelector(".goog-te-combo");
+      if (select) {
+        select.value = lang;
+        select.dispatchEvent(event);
+      } else {
+        // fallback to full reload if not ready
+        window.location.href = window.location.pathname;
+      }
+    }, 500);
   };
+
+  const pathname = usePathname();
+
+  // Reapply the translation on route change
+  useEffect(() => {
+    const applyTranslation = () => {
+      const match = document.cookie.match(/googtrans=\/en\/(\w{2})/);
+      const langCode = match?.[1]?.toLowerCase() || "en";
+      setCurrentLang(langMap[langCode] || "EN");
+
+      // Force translate if not English
+      if (langCode !== "en" && window.google?.translate?.TranslateElement) {
+        const event = document.createEvent("HTMLEvents");
+        event.initEvent("change", true, true);
+        const select = document.querySelector(".goog-te-combo");
+        if (select) {
+          select.value = langCode;
+          select.dispatchEvent(event);
+        }
+      }
+    };
+
+    const timeout = setTimeout(applyTranslation, 300); // wait for Google to be ready
+    return () => clearTimeout(timeout);
+  }, [pathname]);
 
   return (
     <div
@@ -102,8 +129,8 @@ const LanguageSwitcher = () => {
         aria-label="Translate"
         onClick={() => setShowDropdown((prev) => !prev)}
       >
-        <Globe className="w-5 h-5 text-gray-700" />
-        <span className="text-sm font-medium text-gray-700">{currentLang}</span>
+        <Globe className="w-4 md:w-5 h-4 md:h-5 text-gray-800" />
+        <span className="text-sm font-medium text-gray-800">{currentLang}</span>
       </button>
 
       {/* Dropdown */}
