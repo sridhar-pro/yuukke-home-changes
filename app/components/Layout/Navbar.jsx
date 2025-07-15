@@ -195,7 +195,7 @@ export default function Navbar() {
       </div>
 
       {/* Main Navbar */}
-      <nav className="bg-[#f9f9f959] shadow-sm px-0 lg:px-6 py-0  md:py-3 top-0 z-[100] font-serif">
+      <nav className="bg-[#f9f9f959] shadow-sm px-0 lg:px-6 py-3 top-0 z-[100] font-serif">
         <div className="px-3 flex justify-around md:justify-between items-center mt-0 md:mt-5 mb-0 md:mb-5">
           {/* Logo */}
           <Link href="/" className="flex items-center">
