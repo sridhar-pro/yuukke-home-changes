@@ -17,12 +17,6 @@ const nextConfig = {
     ],
   },
 
-  i18n: {
-    locales: ["en", "ta"],
-    defaultLocale: "en",
-    localeDetection: false,
-  },
-
   async rewrites() {
     return [
       {

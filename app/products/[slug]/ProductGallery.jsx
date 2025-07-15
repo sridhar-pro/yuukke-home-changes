@@ -997,88 +997,75 @@ export default function ProductGalleryPage() {
                   Sold By
                 </h3>
 
-                <div className="bg-[#fcfcfc] rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-                  {product.store_details?.[0]?.store_logo && (
-                    <div className="w-full h-[320px] bg-gray-50 flex items-center justify-center px-6">
-                      <Image
-                        src={`https://marketplace.yuukke.com/assets/uploads/${product.store_details[0].store_logo}`}
-                        alt={
-                          product.store_details[0].company_name || "Store logo"
-                        }
-                        width={640}
-                        height={519}
-                        className="object-contain w-full h-full"
-                      />
-                    </div>
-                  )}
-
-                  <div className="p-6 text-center">
-                    <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                      {product.store_details?.[0]?.company_name ||
-                        "Seller Information"}
-                    </h4>
-
-                    {/* {product.review > 0 && (
-                <div className="flex items-center justify-center mb-2">
-                  <div className="flex items-center mr-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-5 h-5 ${
-                          i < Math.floor(Number(product.review))
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-gray-300"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {Number(product.review).toFixed(1)} (
-                    {product.review_count || 0} reviews)
-                  </span>
-                </div>
-              )} */}
-
-                    {product.store_details?.[0]?.address && (
-                      <div className="text-sm text-gray-600 mt-2">
-                        <p className="flex items-center justify-center">
-                          <MapPin className="w-4 h-4 mr-1 text-[#A00300]" />
-                          {product.store_details[0].city},{" "}
-                          {product.store_details[0].state},{" "}
-                          {product.store_details[0].country}
-                        </p>
+                <Link
+                  href={`https://marketplace.yuukke.com/seller/${
+                    product.store_details?.[0]?.slug || ""
+                  }`}
+                  className="block"
+                >
+                  <div className="bg-[#fcfcfc] rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer">
+                    {product.store_details?.[0]?.store_logo && (
+                      <div className="w-full h-[320px] bg-gray-50 flex items-center justify-center px-6">
+                        <Image
+                          src={`https://marketplace.yuukke.com/assets/uploads/${product.store_details[0].store_logo}`}
+                          alt={
+                            product.store_details[0].company_name ||
+                            "Store logo"
+                          }
+                          width={640}
+                          height={519}
+                          className="object-contain w-full h-full"
+                        />
                       </div>
                     )}
 
-                    {(() => {
-                      const type = product.seller?.business_type;
+                    <div className="p-6 text-center">
+                      <h4 className="text-xl font-semibold text-gray-900 mb-2">
+                        {product.store_details?.[0]?.company_name ||
+                          "Seller Information"}
+                      </h4>
 
-                      if (type === "2") {
-                        return (
-                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
-                            <ShieldCheck className="w-5 h-5 mr-2 text-green-500" />
-                            <span className="text-sm font-medium text-green-600">
-                              Verified Seller
-                            </span>
-                          </div>
-                        );
-                      }
+                      {product.store_details?.[0]?.address && (
+                        <div className="text-sm text-gray-600 mt-2">
+                          <p className="flex items-center justify-center">
+                            <MapPin className="w-4 h-4 mr-1 text-[#A00300]" />
+                            {product.store_details[0].city},{" "}
+                            {product.store_details[0].state},{" "}
+                            {product.store_details[0].country}
+                          </p>
+                        </div>
+                      )}
 
-                      if (type === "3") {
-                        return (
-                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
-                            <ShieldCheck className="w-5 h-5 mr-2 text-[#A00300]" />
-                            <span className="text-sm font-medium text-[#A00300]">
-                              Premium Seller
-                            </span>
-                          </div>
-                        );
-                      }
+                      {(() => {
+                        const type = product.seller?.business_type;
 
-                      return null;
-                    })()}
+                        if (type === "2") {
+                          return (
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
+                              <ShieldCheck className="w-5 h-5 mr-2 text-green-500" />
+                              <span className="text-sm font-medium text-green-600">
+                                Verified Seller
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        if (type === "3") {
+                          return (
+                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-center">
+                              <ShieldCheck className="w-5 h-5 mr-2 text-[#A00300]" />
+                              <span className="text-sm font-medium text-[#A00300]">
+                                Premium Seller
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        return null;
+                      })()}
+                    </div>
                   </div>
-                </div>
+                </Link>
               </div>
 
               {/* Related Products */}

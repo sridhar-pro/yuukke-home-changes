@@ -127,7 +127,7 @@ const CategoriesSection = () => {
           </div>
           <div className="text-3xl sm:text-4xl font-medium text-neutral-800">
             Explore our{" "}
-            <span className="italic">
+            <span className="italic" translate="no">
               <FlipWords words={words} />
             </span>
           </div>

@@ -6,7 +6,6 @@ import LoaderWrapper from "./components/Loader/LoaderWrapper";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MobileBottomBar from "./components/MobileBottomBar";
-import GoogleTranslateScript from "./components/Layout/GoogleTranslateScript";
 
 export const metadata = {
   title: "Yuukke",
@@ -45,7 +44,6 @@ export default function RootLayout({ children }) {
         <LoaderWrapper>
           <AuthProvider>
             <Navbar />
-            {/* <GoogleTranslateScript /> */}
             {children}
             <MobileBottomBar />
             <Footer />

@@ -115,6 +115,7 @@ export default function ProductPage() {
 
         const data = await response.json();
         if (!data?.data?.[0]) throw new Error("Product data not found");
+        console.log("data:", data);
         const p = data.data[0];
 
         // Set product state

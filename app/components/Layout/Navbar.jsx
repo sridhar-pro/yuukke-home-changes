@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { User, Heart, ShoppingCart } from "lucide-react";
 import CartSidebar from "../CartSideBar";
 import { useAuth } from "@/app/utils/AuthContext";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const messages = [
   "Yuukke Anniversary Sale – Enjoy 30% OFF Sitewide • Handcrafted • Eco‑Friendly • Gift‑Ready • Limited Time Only – Shop Now!",
@@ -47,73 +48,6 @@ export default function Navbar() {
   };
 
   const router = useRouter();
-
-  const [isTranslating, setIsTranslating] = useState(false);
-
-  useEffect(() => {
-    // Initialize Google Translate only once
-    if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => {
-        new window.google.translate.TranslateElement(
-          {
-            pageLanguage: "en",
-            includedLanguages: "ta",
-            layout:
-              window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-            autoDisplay: false,
-          },
-          "google_translate_element"
-        );
-      };
-
-      // Load script only if not already loaded
-      if (!document.getElementById("google-translate-script")) {
-        const script = document.createElement("script");
-        script.id = "google-translate-script";
-        script.src =
-          "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-        script.async = true;
-        document.body.appendChild(script);
-      }
-    }
-  }, []);
-
-  const translateToTamil = () => {
-    if (isTranslating) return;
-    setIsTranslating(true);
-
-    // Create container if it doesn't exist
-    if (!document.getElementById("google_translate_element")) {
-      const div = document.createElement("div");
-      div.id = "google_translate_element";
-      div.style.display = "none";
-      document.body.appendChild(div);
-    }
-
-    // Wait for Google Translate to load
-    const checkAndTranslate = (attempts = 0) => {
-      if (attempts > 10) {
-        setIsTranslating(false);
-        return;
-      }
-
-      if (window.google && window.google.translate) {
-        const select = document.querySelector(".goog-te-combo");
-        if (select) {
-          select.value = "ta";
-          const event = new Event("change", { bubbles: true });
-          select.dispatchEvent(event);
-          setIsTranslating(false);
-        } else {
-          setTimeout(() => checkAndTranslate(attempts + 1), 300);
-        }
-      } else {
-        setTimeout(() => checkAndTranslate(attempts + 1), 300);
-      }
-    };
-
-    checkAndTranslate();
-  };
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -211,7 +145,7 @@ export default function Navbar() {
   return (
     <>
       {/* Top Marquee */}
-      <div className="bg-black text-white text-xs md:text-sm lg:text-base h-14 md:h-10 flex items-center justify-center font-serif relative overflow-hidden">
+      <div className="bg-black text-white text-[10px] md:text-sm lg:text-base h-14 md:h-10 flex items-center justify-center font-serif relative overflow-hidden">
         <button onClick={handlePrev} className="absolute left-5">
           <IoMdArrowRoundBack className="w-4 h-4 text-white opacity-90" />
         </button>
@@ -351,15 +285,7 @@ export default function Navbar() {
               </button>
 
               {/* 🌐 Language Switcher (Lucide Globe) */}
-              <button
-                onClick={translateToTamil}
-                disabled={isTranslating}
-                className="p-2 hover:bg-gray-100 rounded-full transition"
-                title="Translate to Tamil"
-                aria-label="Translate to Tamil"
-              >
-                <Globe className="w-5 h-5 text-gray-700" />
-              </button>
+              <LanguageSwitcher />
 
               {/* Wishlist */}
               <a
@@ -395,16 +321,10 @@ export default function Navbar() {
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-4 px-2 py-1">
               <SearchBar />
+
               {/* 🌐 Language Switcher (Lucide Globe) */}
-              <button
-                onClick={translateToTamil}
-                disabled={isTranslating}
-                className="p-2 hover:bg-gray-100 rounded-full transition"
-                title="Translate to Tamil"
-                aria-label="Translate to Tamil"
-              >
-                <Globe className="w-5 h-5 text-gray-900" />
-              </button>
+              <LanguageSwitcher />
+
               <button
                 aria-label="Cart"
                 className="p-2 hover:bg-gray-100 rounded-full transition relative"

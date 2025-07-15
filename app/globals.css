@@ -100,3 +100,15 @@ body {
   border: none !important;
   box-shadow: none !important;
 }
+
+/* 💀 Hide the Google Translate top-left loader */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-spinner-pos,
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+body {
+  top: 0px !important; /* Prevent layout shift */
+}
