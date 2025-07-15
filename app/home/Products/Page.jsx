@@ -882,7 +882,7 @@ const FeaturedProducts = () => {
                   </div>
 
                   {/* {button} */}
-                  <div className="flex flex-col gap-4 mt-10 md:mt-0">
+                  <div className="flex flex-col gap-4 mt-3 md:mt-0">
                     {/* Quantity + Add to Cart Row */}
                     <div className="flex items-center justify-between gap-4 ">
                       {/* Quantity Controller */}

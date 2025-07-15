@@ -42,13 +42,13 @@ export default function Home() {
 
       <Products />
 
-      <LazyLoad fallbackHeight={300}>
-        <AnimatedTestimonialsDemo />
-      </LazyLoad>
+      {/* <LazyLoad fallbackHeight={300}> */}
+      <AnimatedTestimonialsDemo />
+      {/* </LazyLoad> */}
 
-      <LazyLoad fallbackHeight={200}>
-        <LogoSlider />
-      </LazyLoad>
+      {/* <LazyLoad fallbackHeight={200}> */}
+      <LogoSlider />
+      {/* </LazyLoad> */}
     </>
   );
 }

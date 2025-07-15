@@ -94,11 +94,11 @@ const SearchBar = () => {
       {/* Search Overlay (appears when active) */}
       {isActive && (
         <div
-          className="absolute top-20 md:top-full -right-[9.5rem] md:right-3 z-50 -mt-10 "
+          className="absolute top-20 md:top-full -right-[12rem] md:right-3 z-50 -mt-10 "
           ref={containerRef}
         >
           {/* Search Input */}
-          <div className="flex items-center bg-white border border-gray-200 shadow-lg rounded-full px-4 py-3 focus-within:ring-2 ring-gray-300 transition-all duration-200 w-[90vw] max-w-md md:w-[450px]">
+          <div className="flex items-center bg-white border border-gray-800 shadow-lg rounded-full px-4 py-3 focus-within:ring-2 ring-gray-300 transition-all duration-200 w-[90vw] max-w-md md:w-[450px]">
             <Search className="w-5 h-5 text-gray-400 mr-2" />
             <input
               type="text"

@@ -1,10 +1,33 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Globe } from "lucide-react";
+
+const langMap = {
+  en: "EN",
+  hi: "HI",
+  ta: "TA",
+  gu: "GU",
+  te: "TE",
+};
 
 const LanguageSwitcher = () => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [currentLang, setCurrentLang] = useState("EN"); // Default to English
+  const dropdownRef = useRef(null);
 
+  // 🧠 Detect clicks outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 🌐 Inject Google Translate script
   useEffect(() => {
     const addGoogleTranslateScript = () => {
       if (window.google?.translate?.TranslateElement) return;
@@ -18,7 +41,7 @@ const LanguageSwitcher = () => {
         new window.google.translate.TranslateElement(
           {
             pageLanguage: "en",
-            includedLanguages: "en,hi,ta,gu,te", // Added Gujarati & Telugu
+            includedLanguages: "en,hi,ta,gu,te",
             layout:
               window.google.translate.TranslateElement.InlineLayout.SIMPLE,
             autoDisplay: false,
@@ -31,6 +54,14 @@ const LanguageSwitcher = () => {
     addGoogleTranslateScript();
   }, []);
 
+  // 📡 Get current language from cookie
+  useEffect(() => {
+    const match = document.cookie.match(/googtrans=\/en\/(\w{2})/);
+    const langCode = match?.[1]?.toLowerCase() || "en";
+    setCurrentLang(langMap[langCode] || "EN");
+  }, []);
+
+  // 🈂️ Switch language
   const handleTranslate = (lang) => {
     if (lang === "en") {
       document.cookie =
@@ -59,15 +90,20 @@ const LanguageSwitcher = () => {
   };
 
   return (
-    <div className="relative inline-block text-left" translate="no">
-      {/* 🌐 Language Switcher Button */}
+    <div
+      className="relative inline-block text-left"
+      translate="no"
+      ref={dropdownRef}
+    >
+      {/* 🌐 Language Switcher Button with Prefix */}
       <button
-        className="p-2 hover:bg-gray-100 rounded-full transition notranslate"
+        className="flex items-center gap-1 p-2 hover:bg-gray-100 rounded-full transition notranslate"
         title="Translate"
         aria-label="Translate"
         onClick={() => setShowDropdown((prev) => !prev)}
       >
         <Globe className="w-5 h-5 text-gray-700" />
+        <span className="text-sm font-medium text-gray-700">{currentLang}</span>
       </button>
 
       {/* Dropdown */}
@@ -76,58 +112,35 @@ const LanguageSwitcher = () => {
           className="absolute right-0 mt-2 w-44 bg-white shadow-md rounded-md z-50 notranslate"
           translate="no"
         >
-          <button
-            onClick={() => {
-              handleTranslate("en");
-              setShowDropdown(false);
-            }}
-            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-          >
-            English - EN
-          </button>
-          <button
-            onClick={() => {
-              handleTranslate("hi");
-              setShowDropdown(false);
-            }}
-            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-          >
-            हिंदी - HI
-          </button>
-          <button
-            onClick={() => {
-              handleTranslate("ta");
-              setShowDropdown(false);
-            }}
-            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-          >
-            தமிழ் - TA
-          </button>
-          <button
-            onClick={() => {
-              handleTranslate("gu");
-              setShowDropdown(false);
-            }}
-            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-          >
-            ગુજરાતી - GU
-          </button>
-          <button
-            onClick={() => {
-              handleTranslate("te");
-              setShowDropdown(false);
-            }}
-            className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-          >
-            తెలుగు - TE
-          </button>
+          {Object.entries(langMap).map(([code, label]) => (
+            <button
+              key={code}
+              onClick={() => {
+                handleTranslate(code);
+                setShowDropdown(false);
+              }}
+              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+            >
+              {`${labelMap(label)} - ${label}`}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Translator Mount (hidden but needed) */}
+      {/* Hidden mount point */}
       <div id="google_translate_element" className="hidden" />
     </div>
   );
 };
+
+// 🏷️ Optional: Make the labels a little prettier (fallback if needed)
+const labelMap = (code) =>
+  ({
+    EN: "English",
+    HI: "हिंदी",
+    TA: "தமிழ்",
+    GU: "ગુજરાતી",
+    TE: "తెలుగు",
+  }[code]);
 
 export default LanguageSwitcher;

@@ -2,7 +2,7 @@
 import { ChevronDown, Globe, Menu, X } from "lucide-react";
 import { IoMdArrowRoundForward, IoMdArrowRoundBack } from "react-icons/io";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import SearchBar from "../SearchBar";
@@ -48,6 +48,27 @@ export default function Navbar() {
   };
 
   const router = useRouter();
+
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        mobileMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
+        setMobileMenuOpen(false);
+        setIsProductsOpen(false);
+        setIsOdopOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -145,7 +166,7 @@ export default function Navbar() {
   return (
     <>
       {/* Top Marquee */}
-      <div className="bg-black text-white text-[10px] md:text-sm lg:text-base h-14 md:h-10 flex items-center justify-center font-serif relative overflow-hidden">
+      <div className="bg-black text-white text-[10px] md:text-sm lg:text-base h-16 md:h-10 flex items-center justify-center font-serif relative overflow-hidden">
         <button onClick={handlePrev} className="absolute left-5">
           <IoMdArrowRoundBack className="w-4 h-4 text-white opacity-90" />
         </button>
@@ -370,7 +391,10 @@ export default function Navbar() {
 
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 px-4 space-y-2 text-lg text-gray-700">
+          <div
+            ref={menuRef}
+            className="md:hidden mt-4 px-4 space-y-2 text-lg text-gray-700"
+          >
             <div className="block py-1">
               <button
                 onClick={() => setIsProductsOpen(!isProductsOpen)}
@@ -382,7 +406,7 @@ export default function Navbar() {
                 <div className="ml-4 mt-2 space-y-0 text-gray-600">
                   {productCategories.map((category) => (
                     <a
-                      key={category.id}
+                      key={category.slug}
                       href={`https://marketplace.yuukke.com/category/${category.slug}`}
                       className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-md rounded"
                     >
@@ -408,7 +432,6 @@ export default function Navbar() {
                   >
                     Uttar Pradesh
                   </a>
-
                   <a
                     href="https://marketplace.yuukke.com/odop_register"
                     className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-md rounded"

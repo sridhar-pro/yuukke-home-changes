@@ -34,10 +34,7 @@ export const AnimatedTestimonials = ({ testimonials, autoplay = true }) => {
   }, [autoplay, handleNext, isVideoPlaying]);
 
   return (
-    <div
-      className="relative pb-10 px-4 md:px-6 lg:px-6 bg-white dark:from-[var(--primary-color)]/10 dark:to-gray-900 transition-colors"
-      translate="no"
-    >
+    <div className="relative pb-10 px-4 md:px-6 lg:px-6 bg-white dark:from-[var(--primary-color)]/10 dark:to-gray-900 transition-colors">
       <div className="max-w-[90rem] mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <AnimatePresence mode="wait">
           <motion.div
