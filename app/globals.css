@@ -67,6 +67,22 @@ html {
   );
 }
 
+@keyframes bounce-opacity {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-15px);
+    opacity: 1;
+  }
+}
+
+.bounce-opacity {
+  animation: bounce-opacity 3s infinite;
+}
+
 /* Hide the Google Translate top banner */
 .goog-te-banner-frame.skiptranslate {
   display: none !important;

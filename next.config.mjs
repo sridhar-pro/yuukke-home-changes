@@ -97,6 +97,11 @@ const nextConfig = {
         destination:
           "https://marketplace.yuukke.com/api/v1/Marketv2/uservalidatepincode",
       },
+      {
+        source: "/api/odopregister",
+        destination:
+          "https://marketplace.betalearnings.com/api/v1/Marketv2/odopRegister",
+      },
     ];
   },
 };

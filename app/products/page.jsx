@@ -1,686 +1,722 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Heart,
-  SlidersHorizontal,
   ChevronDown,
-  Search,
+  Tag,
+  Sparkles,
+  Grid3X3,
+  List,
   ChevronLeft,
   ChevronRight,
-  Check,
-  Circle,
-  Tag,
-  Dot,
+  Heart,
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { containerVariants, itemVariants } from "@/app/utils/variants";
+import Image from "next/image";
 
-const AllProductsPage = () => {
-  const { getValidToken } = useAuth();
-  const hasFetched = useRef(false); // Add this ref
-
-  const options = [
-    { label: "Featured", value: "1f" },
-    { label: "Best Seller", value: "1bs" },
-    { label: "New to Old", value: "1nto" },
-    { label: "Price: Low to High", value: "1plth" },
-    { label: "Price: High to Low", value: "1phtl" },
-  ];
-
-  const [categories, setCategories] = useState([]);
+export default function AllProductsPage() {
+  const [products, setProducts] = useState([]);
+  const hasFetched = useRef(false);
+  // Filter states
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [products, setProducts] = useState([]);
-
-  const [minPrice, setMinPrice] = useState(1);
-  const [maxPrice, setMaxPrice] = useState(0);
-
-  const [inStockOnly, setInStockOnly] = useState(false);
-
+  const [selectedSubSubcategory, setSelectedSubSubcategory] = useState(null);
+  const [inStock, setInStock] = useState(false);
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [viewMode, setViewMode] = useState("grid");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [visibleStart, setVisibleStart] = useState(1); // for pagination chunks
+  const [categories, setCategories] = useState([]);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedSort, setSelectedSort] = useState(options[0]);
+  const [sortBy, setSortBy] = useState("1f"); // default to "Featured"
 
-  const handleSortSelect = (option) => {
-    setSelectedSort(option);
-    setIsOpen(false);
-    // 👉 Trigger sort/filter logic here if needed
+  const getImageSrc = (image) => {
+    if (!image) return "/fallback.png";
+    if (image.startsWith("http") || image.startsWith("/")) return image;
+    return `https://marketplace.yuukke.com/assets/uploads/${image}`;
+  };
 
-    // Re-fetch products with selected sort
-    fetchProductsByCategory(
-      selectedCategory,
-      minPrice,
-      maxPrice,
-      false,
-      1,
-      option.value // ✅ pass selected sort value
-    );
+  const { getValidToken, isAuthReady } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthReady) return;
+
+    const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+
+    const getTokenWithRetry = async (maxAttempts = 10, delay = 500) => {
+      let attempt = 0;
+      while (attempt < maxAttempts) {
+        const token = await getValidToken();
+
+        if (token && typeof token === "string" && token.length > 10) {
+          return token;
+        }
+
+        if (attempt === 5) {
+          localStorage.removeItem("authToken");
+        }
+
+        await wait(delay);
+        attempt++;
+      }
+
+      throw new Error("❌ Auth token unavailable after multiple retries.");
+    };
+
+    const fetchWithAuth = async (url, retry = false) => {
+      try {
+        const token = await getTokenWithRetry();
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.status === 401 && !retry) {
+          localStorage.removeItem("authToken");
+          return await fetchWithAuth(url, true);
+        }
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`❌ HTTP ${res.status}:`, errText);
+          return null;
+        }
+
+        return await res.json();
+      } catch (err) {
+        console.error("🚨 fetchWithAuth error:", err.message);
+        return null;
+      }
+    };
+
+    const fetchCategories = async () => {
+      try {
+        const data = await fetchWithAuth("/api/homeCategory");
+
+        if (!data) {
+          console.warn("⚠️ No category data received.");
+          return;
+        }
+
+        console.log("✅ Categories fetched:", data); // <- YOUR GLORIOUS CONSOLE LOG
+        setCategories(data);
+      } catch (error) {
+        console.error("❌ Error processing categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, [getValidToken, isAuthReady]);
+
+  const sortOptions = [
+    { value: "1f", label: "Featured" },
+    { value: "1bs", label: "Best Seller" },
+    { value: "1nto", label: "Newest" },
+    { value: "1plth", label: "Price: Low to High" },
+    { value: "1phtl", label: "Price: High to Low" },
+  ];
+
+  const fetchProductsByCategory = async (
+    categoryId,
+    subcategoryId,
+    subSubcategoryId,
+    page = 1 // <- ✨ Accept page as a param
+  ) => {
+    const token = localStorage.getItem("authToken");
+
+    const isValidId = (val) => val !== null && val !== undefined;
+
+    const body = {
+      filters: {
+        gifts_products: "",
+        query: "",
+        category: isValidId(categoryId) ? { id: categoryId } : {},
+        subcategory: isValidId(subcategoryId) ? { id: subcategoryId } : {},
+        sub_subcategory: isValidId(subSubcategoryId)
+          ? { id: subSubcategoryId }
+          : {},
+        brand: "",
+        sorting: "name-asc",
+        min_price: "1",
+        max_price: "",
+        in_stock: "1",
+        page: `${page}`, // <- ✨ Use the dynamic page here
+        sort_by_v: "1plth",
+        limit: 24,
+        offset: `${(page - 1) * 24}`,
+      },
+    };
+
+    try {
+      const res = await fetch("/api/getProducts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+      const data = await res.json();
+      console.log("✅ Products fetched for:", {
+        categoryId,
+        subcategoryId,
+        subSubcategoryId,
+      });
+      console.log("📦 Products response:", data);
+
+      setProducts(data?.products || []);
+    } catch (err) {
+      console.error("❌ Fetching products failed:", err);
+    }
   };
 
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    const fetchWithAuth = async (url, retry = false) => {
-      const token = await getValidToken();
-      // console.log("🔐 Using token:", token);
-
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.status === 401 && !retry) {
-        console.warn("⚠️ Token expired, retrying...");
-        localStorage.removeItem("authToken");
-        return fetchWithAuth(url, true);
-      }
-
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      return await res.json();
-    };
-
-    const fetchCategories = async () => {
-      try {
-        const data = await fetchWithAuth("/api/homeCategory");
-        // console.log("📦 Category Data:", data);
-
-        if (Array.isArray(data)) {
-          setCategories(data);
-        }
-      } catch (error) {
-        console.error("❌ Failed to fetch categories:", error);
-      }
-    };
-
-    fetchCategories();
-  }, [getValidToken]);
-
-  useEffect(() => {
-    fetchProductsByCategory(); // ⬅️ no category ID = fetch all products
+    fetchProductsByCategory(null); // load all products by default
   }, []);
 
-  const handleCategorySelect = (categoryId) => {
-    fetchProductsByCategory(categoryId); // ⬅️ fetch products for selected category
-  };
-
-  const fetchProductsByCategory = async (
-    categoryId = null,
-    level = "category",
-    min = minPrice,
-    max = maxPrice,
-    inStock = false,
-    page = 1,
-    sortValue = ""
-  ) => {
-    try {
-      const token = await getValidToken();
-      if (!token) throw new Error("No auth token found");
-
-      const limit = 24;
-      const offset = (page - 1) * limit;
-
-      // Base filters
-      const filters = {
-        gifts_products: "",
-        query: "",
-        brand: "",
-        sorting: "name-asc",
-        min_price: String(min),
-        max_price: String(max),
-        page: String(page),
-        sort_by_v: sortValue,
-        limit: String(limit),
-        offset: String(offset),
-        in_stock: inStock ? "1" : "0",
-      };
-
-      // Only add category filters if categoryId is provided
-      if (categoryId) {
-        filters[level] = { id: categoryId };
-      }
-
-      const response = await fetch("/api/getProducts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ filters }),
-      });
-
-      const result = await response.json();
-
-      console.groupCollapsed(`📦 API Response for Page ${page}`);
-      console.log("🔢 Page Requested:", page);
-      console.log("📂 Full Response:", result);
-      console.log("🛍️ Products:", result.products);
-      console.log("ℹ️ Info:", result.info);
-      console.log("🧪 Filters Used:", result.filters);
-      console.groupEnd();
-
-      if (result?.products) {
-        setProducts(result.products);
-        setTotalPages(Number(result.info?.total_page || 1));
-        setCurrentPage(Number(result.info?.page || 1));
-      } else {
-        console.warn("⚠️ No products found for this page/filter combo.");
-        setProducts([]);
-      }
-    } catch (err) {
-      console.error("❌ Error fetching products:", err.message || err);
-    }
-  };
-
-  const decodeHTMLEntities = (str) =>
-    str
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&#039;/g, "'");
-
   return (
-    <div className="min-h-screen bg-white px-4 md:px-10 py-6">
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar Filters */}
-        <aside className="w-full lg:w-[260px] bg-white h-full px-4 py-6  border-r border-gray-200">
-          {/* Sidebar Title */}
-          <h2 className="text-lg font-bold text-gray-800 mb-6 uppercase tracking-wide">
-            Product Filters
-          </h2>
-
-          {/* Organisation Section Style Heading */}
-          <p className="text-xs font-semibold text-gray-900 mb-2 px-2">
-            AVAILABILITY
-          </p>
-
-          {/* Availability Toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-6 px-2"
+    <div className="min-h-screen  ">
+      <div className="px-6 py-8">
+        <div className="flex gap-8">
+          {/* Left Sidebar */}
+          <motion.aside
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="w-80 space-y-6"
           >
-            <motion.label
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium text-gray-700 transition-all duration-300 cursor-pointer bg-gray-50 hover:bg-gray-100"
+            {/* Availability Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6"
             >
-              <span>In Stock Only</span>
-              <div
-                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
-                  inStockOnly
-                    ? "bg-gradient-to-br from-[#A00300] to-[#D44A47] border-[#A00300] shadow-inner"
-                    : "border-gray-300 bg-white"
-                }`}
-              >
-                <AnimatePresence>
-                  {inStockOnly && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Check className="h-3 w-3 text-white" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              <div className="flex items-center gap-3 mb-4">
+                <h3 className="text-lg font-bold text-black italic uppercase">
+                  Availability
+                </h3>
               </div>
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={inStockOnly}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setInStockOnly(checked);
-                  fetchProductsByCategory(null, minPrice, maxPrice, checked);
-                }}
-              />
-            </motion.label>
-          </motion.div>
 
-          {/* Category Section Header */}
-          <p className="text-xs font-semibold text-gray-900 mb-2 px-2">
-            CATEGORIES
-          </p>
-
-          {/* Category List Styled Like Sidebar Accordion */}
-          <div className="space-y-2">
-            {categories.map((cat, index) => {
-              const isSelected = selectedCategory === cat.id;
-
-              return (
-                <motion.div
-                  key={cat.id}
-                  layout
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="group"
-                >
-                  {/* Main Category Button */}
-                  <button
-                    onClick={() => {
-                      setSelectedCategory(isSelected ? null : cat.id);
-                      setSelectedSubcategory(null);
-                      fetchProductsByCategory(
-                        cat.id,
-                        "category",
-                        minPrice,
-                        maxPrice
-                      );
-                    }}
-                    className={`
-                    relative flex items-center justify-between w-full px-4 py-3.5 text-sm font-semibold
-                    rounded-xl transition-all duration-300 ease-out
-                    ${
-                      isSelected
-                        ? "bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/25"
-                        : "bg-transparent text-slate-700 hover:bg-slate-100/80 hover:shadow-md hover:shadow-slate-200/50"
-                    }
-                    border border-transparent hover:border-slate-300/60
-                    backdrop-blur-sm
-                  `}
+              <motion.label
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 transition-all"
+              >
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={inStock}
+                    onChange={(e) => setInStock(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`w-5 h-5 rounded-md border-2 transition-all duration-300 ${
+                      inStock
+                        ? "bg-black border-black"
+                        : "border-gray-300 hover:border-black"
+                    }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`
-                      p-1.5 rounded-lg transition-colors duration-300
-                     
-                    `}
-                      >
-                        {/* <Tag
-                          className={`h-3.5 w-3.5 ${
-                            isSelected ? "text-white" : "text-slate-600"
-                          }`}
-                        /> */}
-                      </div>
-                      <span className="font-medium tracking-wide uppercase text-left">
-                        {cat.name}
-                      </span>
-                    </div>
-
-                    <motion.div
-                      animate={{ rotate: isSelected ? 180 : 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                      <ChevronDown
-                        className={`h-4 w-4 ${
-                          isSelected ? "text-white/80" : "text-slate-500"
-                        }`}
-                      />
-                    </motion.div>
-
-                    {/* Subtle glow effect for selected state */}
-                    {isSelected && (
-                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-slate-900/20 to-transparent blur-xl -z-10" />
-                    )}
-                  </button>
-
-                  {/* Subcategories */}
-                  <AnimatePresence>
-                    {isSelected && cat.subcategories?.length > 0 && (
+                    {inStock && (
                       <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="overflow-hidden"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-full h-full flex items-center justify-center"
                       >
-                        <div className="pt-2 pb-1 px-2">
-                          <div className="space-y-1">
-                            {cat.subcategories.map((sub, subIndex) => {
-                              const isSubSelected =
-                                selectedSubcategory === sub.id;
-
-                              return (
-                                <motion.div
-                                  key={sub.id}
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{
-                                    duration: 0.2,
-                                    delay: subIndex * 0.05,
-                                  }}
-                                >
-                                  <button
-                                    onClick={() => {
-                                      setSelectedSubcategory(
-                                        isSubSelected ? null : sub.id
-                                      );
-                                      setSelectedCategory(cat.id);
-                                      if (!isSubSelected) {
-                                        fetchProductsByCategory(
-                                          sub.id,
-                                          "subcategory",
-                                          minPrice,
-                                          maxPrice
-                                        );
-                                      }
-                                    }}
-                                    className={`
-                                    flex justify-between items-center w-full text-sm rounded-lg px-4 py-2.5
-                                    transition-all duration-200 ease-out group/sub
-                                    ${
-                                      isSubSelected
-                                        ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border border-red-200/60 shadow-sm"
-                                        : "hover:bg-slate-50 text-slate-600 hover:text-slate-800 border border-transparent hover:border-slate-200/60"
-                                    }
-                                  `}
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <div
-                                        className={`
-                                      w-1.5 h-1.5 rounded-full transition-colors duration-200
-                                      ${
-                                        isSubSelected
-                                          ? "bg-red-500"
-                                          : "bg-slate-300 group-hover/sub:bg-slate-400"
-                                      }
-                                    `}
-                                      />
-                                      <span className="font-medium capitalize text-left">
-                                        {sub.name}
-                                      </span>
-                                    </div>
-
-                                    {sub.sub_subcategories?.length > 0 && (
-                                      <motion.div
-                                        animate={{
-                                          rotate: isSubSelected ? 180 : 0,
-                                        }}
-                                        transition={{ duration: 0.2 }}
-                                      >
-                                        <ChevronDown
-                                          className={`h-3 w-3 transition-colors ${
-                                            isSubSelected
-                                              ? "text-red-500"
-                                              : "text-slate-400 group-hover/sub:text-slate-600"
-                                          }`}
-                                        />
-                                      </motion.div>
-                                    )}
-                                  </button>
-
-                                  {/* Sub-subcategories */}
-                                  <AnimatePresence>
-                                    {isSubSelected &&
-                                      sub.sub_subcategories?.length > 0 && (
-                                        <motion.div
-                                          initial={{ height: 0, opacity: 0 }}
-                                          animate={{
-                                            height: "auto",
-                                            opacity: 1,
-                                          }}
-                                          exit={{ height: 0, opacity: 0 }}
-                                          transition={{ duration: 0.2 }}
-                                          className="overflow-hidden"
-                                        >
-                                          <div className="pl-6 pr-2 pt-1 pb-2">
-                                            <div className="space-y-1">
-                                              {sub.sub_subcategories.map(
-                                                (subsub, subsubIndex) => (
-                                                  <motion.button
-                                                    key={subsub.id}
-                                                    initial={{
-                                                      opacity: 0,
-                                                      x: -8,
-                                                    }}
-                                                    animate={{
-                                                      opacity: 1,
-                                                      x: 0,
-                                                    }}
-                                                    transition={{
-                                                      duration: 0.15,
-                                                      delay: subsubIndex * 0.03,
-                                                    }}
-                                                    onClick={() => {
-                                                      fetchProductsByCategory(
-                                                        subsub.id,
-                                                        "sub_subcategory",
-                                                        minPrice,
-                                                        maxPrice
-                                                      );
-                                                    }}
-                                                    className="
-                                                    flex items-center justify-start gap-2.5 w-full text-left text-xs px-3 py-2 rounded-md
-                                                    text-slate-500 hover:text-red-600 hover:bg-red-50/80
-                                                    transition-all duration-150 ease-out group/subsub
-                                                  "
-                                                  >
-                                                    <Dot className="h-3 w-3 text-slate-300 group-hover/subsub:text-red-400 transition-colors" />
-                                                    <span className="font-medium capitalize">
-                                                      {decodeHTMLEntities(
-                                                        subsub.name
-                                                      )}
-                                                    </span>
-                                                  </motion.button>
-                                                )
-                                              )}
-                                            </div>
-                                          </div>
-                                        </motion.div>
-                                      )}
-                                  </AnimatePresence>
-                                </motion.div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        <div className="w-2 h-2 bg-white rounded-sm" />
                       </motion.div>
                     )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1">
-          {/* Header Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-b-gray-200 pb-4">
-            {/* Left: Filters + Sort */}
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-5 h-5 text-gray-600" />
-                <span className="text-sm text-gray-600">Filters</span>
-              </div> */}
-
-              {/* Sort Dropdown */}
-              <div className="relative inline-block">
-                <button
-                  onClick={() => setIsOpen(!isOpen)}
-                  className="flex items-center gap-2 text-sm text-gray-700 border px-3 py-1.5 rounded-2xl bg-white hover:bg-gray-50 transition"
-                >
-                  {selectedSort.label}
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {isOpen && (
-                  <div className="absolute left-0 mt-2 w-52 bg-white border border-gray-200 shadow-md rounded-md z-50">
-                    {options.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => handleSortSelect(option)}
-                        className={`w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${
-                          selectedSort.value === option.value
-                            ? "bg-gray-100 font-medium"
-                            : ""
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
                   </div>
-                )}
+                </div>
+                <span className="font-medium text-gray-700">In Stock Only</span>
+              </motion.label>
+            </motion.div>
+
+            {/* Categories Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <h3 className="text-lg font-bold text-black italic uppercase">
+                  Categories
+                </h3>
               </div>
-            </div>
 
-            {/* Center: Search Bar */}
-            {/* <div className="flex-1 max-w-md mx-auto relative">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-2xl text-sm"
-              />
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-            </div> */}
-
-            {/* Right: Pagination */}
-            <div className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-              {/* Left Arrow */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                onClick={() =>
-                  visibleStart > 1 && setVisibleStart(visibleStart - 4)
-                }
-                disabled={visibleStart === 1}
-                className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-300 shadow-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </motion.button>
-
-              {/* Page Numbers */}
-              <div className="flex gap-2">
-                {Array.from(
-                  { length: Math.min(4, totalPages - visibleStart + 1) },
-                  (_, i) => {
-                    const pageNum = visibleStart + i;
-                    return (
-                      <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        whileHover={{ scale: 1.06 }}
-                        key={pageNum}
-                        onClick={() => {
-                          setCurrentPage(pageNum);
-                          fetchProductsByCategory(
-                            selectedCategory,
-                            minPrice,
-                            maxPrice,
-                            inStockOnly,
-                            pageNum
-                          );
-                        }}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 border ${
-                          pageNum === currentPage
-                            ? "bg-[#A00300] text-white border-transparent shadow-md"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+              <div className="space-y-3">
+                {categories.map((cat, index) => {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <motion.div
+                      key={cat.id}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.4, delay: index * 0.1 }}
+                      className="group relative"
+                    >
+                      <div
+                        className={`relative bg-gray-50 rounded-xl border overflow-hidden transition-all duration-300 ${
+                          isSelected
+                            ? "border-black/30 shadow-lg shadow-black/10 ring-1 ring-black/20"
+                            : "border-gray-200/60 hover:shadow-md hover:border-gray-300/60"
                         }`}
                       >
-                        {pageNum}
-                      </motion.button>
-                    );
-                  }
-                )}
+                        {isSelected && (
+                          <motion.div
+                            layoutId="selectedBg"
+                            className="absolute inset-0 bg-black/5"
+                            transition={{
+                              type: "spring",
+                              bounce: 0.2,
+                              duration: 0.6,
+                            }}
+                          />
+                        )}
+
+                        <motion.button
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          onClick={() => {
+                            const isCatSelected = selectedCategory === cat.id;
+                            setSelectedCategory(isCatSelected ? null : cat.id);
+                            setSelectedSubcategory(null);
+                            setSelectedSubSubcategory(null);
+                            fetchProductsByCategory(
+                              isCatSelected ? null : cat.id,
+                              null,
+                              null
+                            );
+                          }}
+                          className={`relative w-full flex items-center justify-between px-4 py-3 text-sm font-semibold transition-all duration-300 ${
+                            isSelected
+                              ? "text-black"
+                              : "text-gray-700 hover:text-black"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <motion.div
+                              animate={{
+                                scale: isSelected ? 1.2 : 1,
+                                rotate: isSelected ? 360 : 0,
+                              }}
+                              transition={{ duration: 0.3 }}
+                              className={`w-2 h-2 rounded-full ${
+                                isSelected
+                                  ? "bg-black"
+                                  : "bg-gray-400 group-hover:bg-black"
+                              }`}
+                            />
+                            <span>{cat.name}</span>
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0, rotate: -180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ delay: 0.1 }}
+                              ></motion.div>
+                            )}
+                          </div>
+                          <motion.div
+                            animate={{ rotate: isSelected ? 180 : 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <ChevronDown
+                              className={`w-4 h-4 ${
+                                isSelected ? "text-black" : "text-gray-400"
+                              }`}
+                            />
+                          </motion.div>
+                        </motion.button>
+
+                        <AnimatePresence>
+                          {isSelected && cat.subcategories?.length > 0 && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.4, ease: "easeInOut" }}
+                              className="px-4 pb-3"
+                            >
+                              <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-3" />
+                              <ul className="space-y-1">
+                                {cat.subcategories.map((sub, subIndex) => {
+                                  const isSubSelected =
+                                    selectedSubcategory === sub.id;
+                                  return (
+                                    <motion.li
+                                      key={sub.id}
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: subIndex * 0.05 }}
+                                      className="relative"
+                                    >
+                                      <motion.button
+                                        whileHover={{ x: 4, scale: 1.01 }}
+                                        whileTap={{ scale: 0.99 }}
+                                        onClick={() => {
+                                          const isSubSelected =
+                                            selectedSubcategory === sub.id;
+                                          setSelectedSubcategory(
+                                            isSubSelected ? null : sub.id
+                                          );
+                                          setSelectedSubSubcategory(null);
+                                          fetchProductsByCategory(
+                                            selectedCategory,
+                                            isSubSelected ? null : sub.id,
+                                            null
+                                          );
+                                        }}
+                                        className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
+                                          isSubSelected
+                                            ? "bg-black/10 text-black border border-black/20"
+                                            : "text-gray-600 hover:bg-white hover:text-black"
+                                        }`}
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex items-center gap-2">
+                                            <div
+                                              className={`w-1.5 h-1.5 rounded-full ${
+                                                isSubSelected
+                                                  ? "bg-black"
+                                                  : "bg-gray-400"
+                                              }`}
+                                            />
+                                            <span>{sub.name}</span>
+                                          </div>
+                                          {sub.sub_subcategories?.length >
+                                            0 && (
+                                            <ChevronDown
+                                              className={`w-3 h-3 transition-transform ${
+                                                isSubSelected
+                                                  ? "rotate-180 text-black"
+                                                  : "text-gray-400"
+                                              }`}
+                                            />
+                                          )}
+                                        </div>
+                                      </motion.button>
+
+                                      <AnimatePresence>
+                                        {isSubSelected &&
+                                          sub.sub_subcategories?.length > 0 && (
+                                            <motion.ul
+                                              initial={{
+                                                opacity: 0,
+                                                scale: 0.95,
+                                                y: -5,
+                                              }}
+                                              animate={{
+                                                opacity: 1,
+                                                scale: 1,
+                                                y: 0,
+                                              }}
+                                              exit={{
+                                                opacity: 0,
+                                                scale: 0.95,
+                                                y: -5,
+                                              }}
+                                              transition={{ duration: 0.2 }}
+                                              className="absolute left-full top-0 ml-2 w-48 bg-white shadow-lg border border-gray-200 rounded-lg z-10"
+                                            >
+                                              {sub.sub_subcategories.map(
+                                                (ssub) => (
+                                                  <li key={ssub.id}>
+                                                    <button
+                                                      onClick={() =>
+                                                        console.log(
+                                                          "Sub-sub selected:",
+                                                          ssub.slug
+                                                        )
+                                                      }
+                                                      className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-black hover:bg-black/5"
+                                                    >
+                                                      • {ssub.name}
+                                                    </button>
+                                                  </li>
+                                                )
+                                              )}
+                                            </motion.ul>
+                                          )}
+                                      </AnimatePresence>
+                                    </motion.li>
+                                  );
+                                })}
+                              </ul>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            {/* Price Range Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <h3 className="text-lg font-bold text-black italic uppercase">
+                  Price Range
+                </h3>
               </div>
 
-              {/* Right Arrow */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.05 }}
-                onClick={() =>
-                  visibleStart + 4 <= totalPages &&
-                  setVisibleStart(visibleStart + 4)
-                }
-                disabled={visibleStart + 4 > totalPages}
-                className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-300 shadow-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </motion.button>
-            </div>
-          </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Min Price
+                    </label>
+                    <input
+                      type="number"
+                      value={priceRange[0]}
+                      onChange={(e) =>
+                        setPriceRange([
+                          Number.parseInt(e.target.value) || 0,
+                          priceRange[1],
+                        ])
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/20 focus:border-black transition-all"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max Price
+                    </label>
+                    <input
+                      type="number"
+                      value={priceRange[1]}
+                      onChange={(e) =>
+                        setPriceRange([
+                          priceRange[0],
+                          Number.parseInt(e.target.value) || 1000,
+                        ])
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/20 focus:border-black transition-all"
+                      placeholder="1000"
+                    />
+                  </div>
+                </div>
 
-          {/* Product Grid */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-black text-white py-2 px-4 rounded-lg font-medium hover:shadow-lg transition-all"
+                >
+                  Apply Filter
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.aside>
+
+          {/* Main Content */}
+          <motion.main
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex-1"
           >
-            {products.map((product, i) => {
-              const imageUrl = `https://marketplace.yuukke.com/assets/uploads/${product.image}`;
-              const now = new Date();
-              const promoEnd = new Date(product.end_date);
-              const isPromoValid = product.promo_price && promoEnd > now;
-
-              const actualPrice = isPromoValid
-                ? product.promo_price
-                : product.price;
-
-              return (
-                <Link href={`/products/${product.slug}`} key={product.id || i}>
-                  <motion.div
-                    variants={itemVariants}
-                    className="bg-white rounded-lg p-3 transition cursor-pointer hover:shadow-sm"
+            {/* Top Controls */}
+            <div className="flex items-center justify-between mb-8">
+              {/* Sort Dropdown */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="appearance-none bg-white border border-gray-300 rounded-xl px-4 py-3 pr-10 focus:ring-2 focus:ring-[#A00300]/20 focus:border-[#A00300] transition-all font-medium"
                   >
-                    {/* Image + badge section (unchanged) */}
-                    <div className="relative aspect-square bg-gray-100 rounded mb-3 overflow-hidden">
-                      <button
-                        onClick={() =>
-                          (window.location.href =
-                            "https://marketplace.yuukke.com/shop/login/")
-                        }
-                        className="absolute top-2 right-2 bg-white rounded-full p-1 cursor-pointer"
-                      >
-                        <Heart className="w-4 h-4 text-gray-600" />
-                      </button>
+                    {sortOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
 
-                      {product.business_type === "3" && (
-                        <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
-                          Premium
-                        </span>
-                      )}
-                      {product.business_type === "2" && (
-                        <span className="absolute top-2 left-2 bg-green-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
-                          Verified
-                        </span>
-                      )}
+                {/* <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-xl p-1">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setViewMode("grid")}
+                    className={`p-2 rounded-lg transition-all ${
+                      viewMode === "grid"
+                        ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setViewMode("list")}
+                    className={`p-2 rounded-lg transition-all ${
+                      viewMode === "list"
+                        ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </motion.button>
+                </div> */}
+              </div>
 
-                      <img
-                        src={imageUrl}
-                        alt={product.name}
-                        className="object-cover w-full h-full"
-                      />
+              {/* Pagination */}
+              <div className="flex items-center gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </motion.button>
+
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3].map((page) => (
+                    <motion.button
+                      key={page}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                        currentPage === page
+                          ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </motion.button>
+                  ))}
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            {products.length > 0 ? (
+              <motion.div
+                layout
+                className={`grid gap-6 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    : "grid-cols-1"
+                }`}
+              >
+                {products.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                    whileHover={{ y: -5 }}
+                    className="group rounded-3xl bg-white transition-all duration-300 overflow-hidden"
+                  >
+                    <div className="relative">
+                      <div className="relative w-full h-40 md:h-56 rounded-2xl overflow-hidden mb-3 md:mb-4 group">
+                        <Image
+                          src={getImageSrc(product.image)}
+                          alt={product.name || "Image not found!"}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                          className="object-contain"
+                        />
+                      </div>
+
+                      <div className="absolute top-3 right-3 flex gap-2 z-10">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-2 bg-white/70 backdrop-blur-sm rounded-full shadow hover:bg-white transition-all"
+                        >
+                          <Heart className="w-4 h-4 text-gray-700" />
+                        </motion.button>
+                      </div>
                     </div>
 
-                    <div className="text-sm font-semibold text-gray-900 truncate capitalize">
-                      {product.name}
-                    </div>
+                    <div className="p-5">
+                      <h3 className="text-xs md:text-base font-semibold line-clamp-2 mb-0.5 md:mb-1 capitalize">
+                        {product.name}
+                      </h3>
 
-                    <div className="flex gap-2 mt-1 items-center">
-                      {isPromoValid && (
-                        <span className="text-sm text-gray-400 line-through">
-                          ₹{parseFloat(product.price).toFixed(0)}
-                        </span>
-                      )}
-                      <span className="text-sm text-[#A00300] font-bold">
-                        ₹{parseFloat(actualPrice).toFixed(0)}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        {/* Price Display */}
+                        <div className="space-y-1 mt-1">
+                          {product.promo_price &&
+                          product.end_date &&
+                          new Date(product.end_date) > new Date() ? (
+                            <>
+                              <div className="flex items-baseline gap-1.5 md:gap-2 flex-wrap">
+                                <p className="text-sm md:text-lg font-bold ">
+                                  ₹{Number(product.promo_price).toFixed(2)}
+                                </p>
+                                <p className="text-xs md:text-sm text-gray-400 line-through">
+                                  ₹{Number(product.price).toFixed(2)}
+                                </p>
+                              </div>
+
+                              {/* Show discount badge only on mobile in next line */}
+                              <span className="block md:inline text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg md:ml-2">
+                                {Math.round(
+                                  ((Number(product.price) -
+                                    Number(product.promo_price)) /
+                                    Number(product.price)) *
+                                    100
+                                )}
+                                % OFF
+                              </span>
+                            </>
+                          ) : (
+                            <p
+                              className={`text-sm md:text-lg font-bold ${
+                                isOutOfStock ? "text-gray-500" : "text-gray-900"
+                              }`}
+                            >
+                              ₹{Number(product.price).toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
-                </Link>
-              );
-            })}
-          </motion.div>
-        </main>
+                ))}
+              </motion.div>
+            ) : (
+              <div className="text-center text-gray-500 p-10">
+                No products found!
+              </div>
+            )}
+          </motion.main>
+        </div>
       </div>
     </div>
   );
-};
-
-export default AllProductsPage;
+}
