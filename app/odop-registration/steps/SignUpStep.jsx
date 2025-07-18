@@ -59,6 +59,7 @@ const SignUpStep = ({ nextStep, prevStep }) => {
 
       localStorage.setItem("userName", name);
       localStorage.setItem("userPhone", `91${phoneNumber}`);
+      console.log(localStorage.getItem("userName"));
 
       setStep(2);
     } catch (error) {
@@ -67,7 +68,7 @@ const SignUpStep = ({ nextStep, prevStep }) => {
     } finally {
       setTimeout(() => {
         setIsSending(false); // Stop loader
-      }, 2000);
+      }, 1000);
     }
   };
 
@@ -116,7 +117,7 @@ const SignUpStep = ({ nextStep, prevStep }) => {
       // 🕐 Dramatic pause before moving on
       setTimeout(() => {
         setIsVerifying(false);
-      }, 1000);
+      }, 2000);
     }
   };
 

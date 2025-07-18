@@ -42,7 +42,13 @@ const ProfileStep = ({ nextStep, prevStep }) => {
 
     if (!formData.businessName.trim())
       newErrors.businessName = "Business name is required.";
-    if (!formData.address.trim()) newErrors.address = "Address is required.";
+    if (!formData.address.trim()) {
+      newErrors.address = "Address is required.";
+    } else if (formData.address.trim().split(/\s+/).length < 3) {
+      newErrors.address =
+        "Please include Flat No, Road No, and Area in the address.";
+    }
+
     if (!formData.pincode.trim()) newErrors.pincode = "Pincode is required.";
     else if (!/^\d{6}$/.test(formData.pincode))
       newErrors.pincode = "Pincode must be 6 digits.";

@@ -28,10 +28,10 @@ const CongratsCard = ({ Icon, title, desc, delay = 0 }) => (
   </motion.div>
 );
 
-const name =
-  typeof window !== "undefined" ? localStorage.getItem("userName") : "User";
-
 const Congratulations = () => {
+  const name =
+    typeof window !== "undefined" ? localStorage.getItem("userName") : "User";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 60 }}
@@ -102,6 +102,11 @@ const Congratulations = () => {
       <button
         className="bg-[#6B1D1D] px-32 py-2 text-white rounded-xl hover:opacity-90"
         onClick={() => {
+          localStorage.removeItem("bankAccount");
+          localStorage.removeItem("upiId");
+          localStorage.removeItem("userName");
+          localStorage.removeItem("phoneNumber");
+
           const token = localStorage.getItem("Token");
           if (!token) {
             alert("⚠️ Token not found. Please login again.");
@@ -119,7 +124,7 @@ const Congratulations = () => {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl shadow-md w-full max-w-3xl px-4 sm:px-6 md:px-8 py-8 sm:py-10 mx-auto"
+        className="bg-white rounded-2xl shadow-md border border-gray-200 w-full max-w-3xl px-4 sm:px-6 md:px-8 py-8 sm:py-10 mx-auto"
       >
         <h2 className="text-xl sm:text-2xl font-bold text-[#6B1D1D] text-center mb-2">
           Get Seller Tips
@@ -157,7 +162,7 @@ const Congratulations = () => {
                 {item.icon}
               </div>
               <div>
-                <h4 className="font-semibold text-base sm:text-lg text-[#160909] text-center">
+                <h4 className="font-semibold text-base sm:text-lg text-[#160909] text-left">
                   {item.title}
                 </h4>
                 <p className="text-sm sm:text-base text-gray-600 mt-1 text-left">

@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import Congratulations from "./Congrats";
 
 const PaymentStep = ({ prevStep, onComplete }) => {
-  const [method, setMethod] = useState("yuukke");
+  const [method, setMethod] = useState("bank");
   const [bankAccount, setBankAccount] = useState("");
   const [upiId, setUpiId] = useState("");
   const [errors, setErrors] = useState({});
@@ -18,15 +18,12 @@ const PaymentStep = ({ prevStep, onComplete }) => {
     const newErrors = {};
 
     if (method === "bank") {
-      if (!bankAccount.trim()) {
-        newErrors.bankAccount = "Bank account number is required.";
-      } else if (!/^\d{10,18}$/.test(bankAccount)) {
-        newErrors.bankAccount = "Bank account number must be 10-18 digits.";
+      if (bankAccount.trim() && !/^\d{4,50}$/.test(bankAccount)) {
+        newErrors.bankAccount =
+          "Bank account number must be more than 4 digits.";
       }
     } else if (method === "upi") {
-      if (!upiId.trim()) {
-        newErrors.upiId = "UPI ID is required.";
-      } else if (!/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
+      if (upiId.trim() && !/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(upiId)) {
         newErrors.upiId = "Enter a valid UPI ID (e.g. name@upi).";
       }
     }
@@ -45,9 +42,7 @@ const PaymentStep = ({ prevStep, onComplete }) => {
       const name = localStorage.getItem("userName") || "";
       const phoneNumber = localStorage.getItem("userPhone") || "";
       const formData = JSON.parse(localStorage.getItem("businessInfo") || "{}");
-      const paymentMethod = localStorage.getItem("paymentMethod") || "";
-      const bankAccount = localStorage.getItem("bankAccount") || "";
-      const upiId = localStorage.getItem("upiId") || "";
+      const paymentMethod = method;
 
       const payload = {
         firstname: name,
@@ -57,9 +52,10 @@ const PaymentStep = ({ prevStep, onComplete }) => {
         pincode: Number(formData.pincode) || "",
         state: formData.state || "",
         city: formData.city || "",
-        bank_account_no: paymentMethod === "bank" ? bankAccount : "",
-        upi_id: paymentMethod === "upi" ? upiId : "",
+        bank_account_no: paymentMethod === "bank" ? bankAccount : "0",
+        upi_id: paymentMethod === "upi" ? upiId : "0",
       };
+      console.log(payload);
 
       try {
         const res = await fetch("/api/odopregister", {
