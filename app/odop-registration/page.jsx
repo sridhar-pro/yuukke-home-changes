@@ -61,7 +61,7 @@ const MultiStepForm = () => {
       default:
         return (
           <>
-            <div className="font-odop  relative flex items-center justify-center h-auto md:min-h-screen bg-white overflow-hidden -translate-y-10 md:-translate-y-16 ">
+            <div className="font-odop  relative flex items-center justify-center h-[38rem] md:min-h-screen bg-white overflow-hidden  -translate-y-0 md:-translate-y-16 ">
               {/* 🍃 Decorative Leaves with Motion */}
               {[
                 { top: "top-24", left: "left-[0rem]" },
@@ -89,35 +89,37 @@ const MultiStepForm = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
               >
-                <h1 className="text-[3rem] font-bold text-[#411111]">
+                <h1 className="text-[2rem] md:text-[3rem] font-bold text-[#411111]">
                   Welcome to <span className="text-[#6B1D1D]">Yuukke</span>
                 </h1>
-                <h4 className="text-[1.875rem] font-semibold text-[#3F1F1F]">
+                <h4 className="text-[1.5rem] md:text-[1.875rem] font-semibold text-[#3F1F1F]">
                   The Marketplace for Conscious Sellers
                 </h4>
-                <p className="text-gray-500 text-[1.25rem]">
+                <p className="text-gray-500 text-[1rem] md:text-[1.25rem]">
                   Reach conscious buyers and grow your sustainable business
                   effortlessly.
                 </p>
 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={nextStep}
-                  className="bg-[#6B1D1D] hover:bg-[#551414] text-white px-24 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 mx-auto transition"
-                >
-                  <ArrowRight size={18} />
-                  <span>Start Onboarding</span>
-                </motion.button>
+                <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto sm:justify-center mt-6">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={nextStep}
+                    className="bg-[#6B1D1D] hover:bg-[#551414] text-white px-6 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 transition"
+                  >
+                    <ArrowRight size={18} />
+                    <span>Start Onboarding</span>
+                  </motion.button>
 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => setShowWhy(!showWhy)}
-                  className="bg-transparent hover:bg-gray-100 text-black px-20 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 mx-auto transition"
-                >
-                  <Info size={18} className="text-gray-700" />
-                  <span>Why Sell on Yuukke?</span>
-                </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => setShowWhy(!showWhy)}
+                    className="bg-transparent hover:bg-gray-100 text-black px-6 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 transition"
+                  >
+                    <Info size={18} className="text-gray-700" />
+                    <span>Why Sell on Yuukke?</span>
+                  </motion.button>
+                </div>
 
                 <p className="text-sm text-gray-500">
                   Trusted by 1,000+ sustainable brands

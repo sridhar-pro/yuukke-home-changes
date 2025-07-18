@@ -116,7 +116,7 @@ const SignUpStep = ({ nextStep, prevStep }) => {
       // 🕐 Dramatic pause before moving on
       setTimeout(() => {
         setIsVerifying(false);
-      }, 2000);
+      }, 1000);
     }
   };
 
@@ -241,10 +241,13 @@ const SignUpStep = ({ nextStep, prevStep }) => {
           </label>
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             maxLength={6}
             value={code}
             onChange={(e) => {
-              setCode(e.target.value);
+              const onlyNumbers = e.target.value.replace(/\D/g, ""); // Strip non-digits
+              setCode(onlyNumbers);
               if (otpError) setOtpError("");
             }}
             placeholder="0 0 0 0 0 0"
@@ -269,13 +272,17 @@ const SignUpStep = ({ nextStep, prevStep }) => {
       )}
 
       <div className="flex justify-between mt-10 text-sm">
-        <button
-          className="flex items-center gap-2 px-6 py-2 rounded-xl bg-transparent text-[#6B1D1D] hover:bg-gray-200 transition"
-          onClick={handleBack}
-        >
-          <ArrowLeft />
-          Back
-        </button>
+        {step !== 1 ? (
+          <button
+            className="flex items-center gap-2 px-6 py-2 rounded-xl bg-transparent text-[#6B1D1D] hover:bg-gray-200 transition"
+            onClick={handleBack}
+          >
+            <ArrowLeft />
+            Back
+          </button>
+        ) : (
+          <div /> // Invisible filler to keep spacing intact
+        )}
 
         {step === 1 ? (
           <button
