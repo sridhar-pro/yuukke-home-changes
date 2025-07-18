@@ -44,9 +44,14 @@ const ProfileStep = ({ nextStep, prevStep }) => {
       newErrors.businessName = "Business name is required.";
     if (!formData.address.trim()) {
       newErrors.address = "Address is required.";
-    } else if (formData.address.trim().split(/\s+/).length < 3) {
+    } else if (
+      formData.address
+        .trim()
+        .split(/[\s,]+/) // Split by space OR comma (1 or more)
+        .filter(Boolean).length < 3
+    ) {
       newErrors.address =
-        "Please include Flat No, Road No, and Area in the address.";
+        "Please include Door No and Area in the address (use space or comma).";
     }
 
     if (!formData.pincode.trim()) newErrors.pincode = "Pincode is required.";
