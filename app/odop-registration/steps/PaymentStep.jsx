@@ -12,6 +12,7 @@ const PaymentStep = ({ prevStep, onComplete }) => {
   const [upiId, setUpiId] = useState("");
   const [errors, setErrors] = useState({});
   const [isSetupComplete, setIsSetupComplete] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = () => {
     const newErrors = {};
@@ -37,59 +38,63 @@ const PaymentStep = ({ prevStep, onComplete }) => {
   const handleComplete = async () => {
     if (!validate()) return;
 
-    // Fetch data from localStorage
-    const name = localStorage.getItem("userName") || "";
-    const phoneNumber = localStorage.getItem("userPhone") || "";
-    const formData = JSON.parse(localStorage.getItem("businessInfo") || "{}");
-    const paymentMethod = localStorage.getItem("paymentMethod") || "";
-    const bankAccount = localStorage.getItem("bankAccount") || "";
-    const upiId = localStorage.getItem("upiId") || "";
+    setIsSubmitting(true); // start spinner
 
-    // Build payload
-    const payload = {
-      firstname: name,
-      phone_no: Number(phoneNumber),
-      store_name: formData.businessName || "",
-      address: formData.address || "",
-      pincode: Number(formData.pincode) || "",
-      state: formData.state || "",
-      city: formData.city || "",
-      bank_account_no: paymentMethod === "bank" ? bankAccount : "",
-      upi_id: paymentMethod === "upi" ? upiId : "",
-    };
+    setTimeout(async () => {
+      // Fetch data from localStorage
+      const name = localStorage.getItem("userName") || "";
+      const phoneNumber = localStorage.getItem("userPhone") || "";
+      const formData = JSON.parse(localStorage.getItem("businessInfo") || "{}");
+      const paymentMethod = localStorage.getItem("paymentMethod") || "";
+      const bankAccount = localStorage.getItem("bankAccount") || "";
+      const upiId = localStorage.getItem("upiId") || "";
 
-    try {
-      const res = await fetch("/api/odopregister", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const payload = {
+        firstname: name,
+        phone_no: Number(phoneNumber),
+        store_name: formData.businessName || "",
+        address: formData.address || "",
+        pincode: Number(formData.pincode) || "",
+        state: formData.state || "",
+        city: formData.city || "",
+        bank_account_no: paymentMethod === "bank" ? bankAccount : "",
+        upi_id: paymentMethod === "upi" ? upiId : "",
+      };
 
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("❌ Registration failed:", err);
-        alert("Registration failed. Please check details and try again.");
-        return;
+      try {
+        const res = await fetch("/api/odopregister", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          console.error("❌ Registration failed:", err);
+          alert("Registration failed. Please check details and try again.");
+          return;
+        }
+
+        const responseData = await res.json();
+        console.log("✅ Registration successful:", responseData);
+
+        if (responseData.data?.token) {
+          localStorage.setItem("Token", responseData.data.token);
+        } else {
+          console.warn("⚠️ Token not found in response");
+        }
+
+        setIsSetupComplete(true);
+        onComplete();
+      } catch (error) {
+        console.error("🔥 Unexpected error during registration:", error);
+        alert("Something went wrong. Please try again later.");
+      } finally {
+        setIsSubmitting(false); // stop spinner
       }
-
-      const responseData = await res.json();
-      console.log("✅ Registration successful:", responseData);
-
-      // 🪄 Extract token and store for later use
-      if (responseData.data?.token) {
-        localStorage.setItem("Token", responseData.data.token);
-      } else {
-        console.warn("⚠️ Token not found in response");
-      }
-
-      setIsSetupComplete(true);
-      onComplete();
-    } catch (error) {
-      console.error("🔥 Unexpected error during registration:", error);
-      alert("Something went wrong. Please try again later.");
-    }
+    }, 2000); // 2 sec dramatic pause
   };
 
   if (isSetupComplete) {
@@ -98,7 +103,7 @@ const PaymentStep = ({ prevStep, onComplete }) => {
 
   return (
     <motion.div
-      className="w-full max-w-xl mx-auto mt-10 px-4 py-8 bg-white rounded-xl -translate-y-16"
+      className="font-odop w-full max-w-xl mx-auto mt-10 px-4 py-8 bg-white rounded-xl -translate-y-16 font-sans"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -119,7 +124,8 @@ const PaymentStep = ({ prevStep, onComplete }) => {
       {/* Payment Method */}
       <div className="mb-6 text-left">
         <p className="text-sm font-medium text-[#6B1D1D] mb-2">
-          Select Payment Method
+          Select Payment Method{" "}
+          <span className="text-gray-500">(optional)</span>
         </p>
 
         <div className="flex items-center gap-2 mb-2">
@@ -211,7 +217,7 @@ const PaymentStep = ({ prevStep, onComplete }) => {
       </div>
 
       {/* Security Message */}
-      <div className="flex items-center gap-2 text-xs text-[#6B1D1D] bg-gray-100 p-3 rounded-2xl">
+      <div className="flex items-center gap-2 text-xs text-[#6B1D1D] bg-[#842e2e0d] p-3 rounded-2xl">
         <Lock className="w-4 h-4" />
         <span>Your payment information is encrypted and secure</span>
       </div>
@@ -228,10 +234,37 @@ const PaymentStep = ({ prevStep, onComplete }) => {
 
         <button
           onClick={handleComplete}
-          className="flex items-center gap-2 px-6 py-2 rounded-xl bg-[#6B1D1D] text-white hover:bg-[#501212] transition"
+          disabled={isSubmitting}
+          className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-[#6B1D1D] text-white hover:bg-[#501212] transition min-w-[170px] disabled:opacity-60"
         >
-          Complete Setup
-          <ArrowRight className="w-4 h-4" />
+          {isSubmitting ? (
+            <>
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+                ></path>
+              </svg>
+              Completing setup
+            </>
+          ) : (
+            <>
+              Complete Setup <ArrowRight className="w-4 h-4" />
+            </>
+          )}
         </button>
       </div>
     </motion.div>

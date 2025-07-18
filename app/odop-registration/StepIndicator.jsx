@@ -6,7 +6,7 @@ const StepIndicator = ({ currentStep }) => {
   const steps = ["Sign Up", "Profile", "Payment"];
 
   return (
-    <div className="flex justify-center items-center gap-16 mb-12">
+    <div className="font-odop flex justify-center items-center gap-12 md:gap-16 mb-12">
       {steps.map((step, index) => {
         const isCompleted = index < currentStep;
         const isActive = index === currentStep;
@@ -62,7 +62,7 @@ const StepIndicator = ({ currentStep }) => {
                   backgroundColor: index < currentStep ? "#6B1D1D" : "#D1D5DB", // gray-300
                 }}
                 transition={{ duration: 0.3 }}
-                className="absolute top-[50px] right-[-5.8rem] w-28 h-0.5 z-0"
+                className="absolute top-[50px] right-[-5rem] md:right-[-5.8rem] w-24 md:w-28 h-0.5 z-0"
               />
             )}
           </div>

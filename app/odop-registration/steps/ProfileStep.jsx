@@ -65,7 +65,7 @@ const ProfileStep = ({ nextStep, prevStep }) => {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto mt-10 px-4 py-8 bg-white rounded-xl -translate-y-28">
+    <div className="font-odop w-full max-w-xl mx-auto mt-10 px-4 py-8 bg-white rounded-xl -translate-y-28">
       <div className="text-left mb-8">
         <h1 className="text-2xl font-bold text-[#6B1D1D] mb-1">
           Business Information

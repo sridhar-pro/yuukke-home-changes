@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Check, Shield } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/bootstrap.css";
+import { toast } from "react-toastify";
 
 const SignUpStep = ({ nextStep, prevStep }) => {
   const [step, setStep] = useState(1);
@@ -11,6 +12,9 @@ const SignUpStep = ({ nextStep, prevStep }) => {
   const [otpError, setOtpError] = useState("");
   const [errors, setErrors] = useState({ name: "", phoneNumber: "" });
   const [verified, setVerified] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const validateAndSend = async () => {
     const newErrors = {
@@ -28,6 +32,7 @@ const SignUpStep = ({ nextStep, prevStep }) => {
     const isValid = Object.values(newErrors).every((error) => error === "");
     if (!isValid) return;
 
+    setIsSending(true); // Start loader
     try {
       const response = await fetch(`/api/send-otp?phone=${phoneNumber}`, {
         method: "GET",
@@ -47,7 +52,8 @@ const SignUpStep = ({ nextStep, prevStep }) => {
           data?.error ||
           data?.message ||
           "Failed to send OTP";
-        alert(errorMessage);
+
+        toast.error(errorMessage);
         return;
       }
 
@@ -58,6 +64,10 @@ const SignUpStep = ({ nextStep, prevStep }) => {
     } catch (error) {
       console.error("OTP error:", error);
       alert("Failed to send OTP. Try again.");
+    } finally {
+      setTimeout(() => {
+        setIsSending(false); // Stop loader
+      }, 2000);
     }
   };
 
@@ -66,6 +76,8 @@ const SignUpStep = ({ nextStep, prevStep }) => {
       setOtpError("OTP is required");
       return;
     }
+
+    setIsVerifying(true);
 
     try {
       const storedPhone = localStorage.getItem("userPhone");
@@ -82,16 +94,29 @@ const SignUpStep = ({ nextStep, prevStep }) => {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data?.error || "OTP verification failed");
+      if (!response.ok || data?.data?.status === "error") {
+        const errorMessage =
+          data?.data?.message ||
+          data?.error ||
+          data?.message ||
+          "OTP verification failed";
+        throw new Error(errorMessage);
       }
 
-      setVerified(true);
-      setOtpError("");
-      nextStep();
+      // 🕐 Dramatic pause before moving on
+      setTimeout(() => {
+        setVerified(true);
+        setOtpError("");
+        nextStep();
+      }, 2000);
     } catch (error) {
       console.error("OTP Verification Error:", error);
-      setOtpError("Invalid OTP. Please try again.");
+      setOtpError("Invalid OTP. Please try again." || error.message);
+    } finally {
+      // 🕐 Dramatic pause before moving on
+      setTimeout(() => {
+        setIsVerifying(false);
+      }, 2000);
     }
   };
 
@@ -104,9 +129,9 @@ const SignUpStep = ({ nextStep, prevStep }) => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto mt-10 px-4 py-8 bg-white -translate-y-10">
+    <div className="font-odop w-full max-w-md mx-auto mt-10 px-4 py-8 bg-white -translate-y-10">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold mb-1 text-[#6B1D1D]">
+        <h1 className="text-2xl font-[700] mb-1 text-[#391414]">
           {step === 1 ? "Create Your Account" : "Verify Your Phone"}
         </h1>
         <p className="text-gray-500 text-sm">
@@ -122,7 +147,7 @@ const SignUpStep = ({ nextStep, prevStep }) => {
           <div className="mb-4 text-left">
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-[#6B1D1D] mb-1"
+              className="block text-[0.875rem] font-medium text-[#6B1D1D] mb-1"
             >
               Name
             </label>
@@ -149,7 +174,7 @@ const SignUpStep = ({ nextStep, prevStep }) => {
               htmlFor="phoneNumber"
               className="block text-sm font-medium text-[#6B1D1D] mb-1"
             >
-              Phone Number (Your User ID)
+              Phone Number
             </label>
 
             <div className="flex items-center border border-transparent rounded-2xl focus-within:ring-2 focus-within:ring-red-800 overflow-hidden">
@@ -254,17 +279,73 @@ const SignUpStep = ({ nextStep, prevStep }) => {
 
         {step === 1 ? (
           <button
-            className="flex items-center gap-2 px-6 py-2 rounded-xl bg-[#6B1D1D] text-white hover:bg-red-900 transition"
+            className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-[#6B1D1D] text-white hover:bg-red-900 transition min-w-[180px] disabled:opacity-60"
             onClick={validateAndSend}
+            disabled={isSending}
           >
-            Send Code <Shield className="w-4 h-4" />
+            {isSending ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+                  ></path>
+                </svg>
+                Sending...
+              </>
+            ) : (
+              <>
+                Send Code <Shield className="w-4 h-4" />
+              </>
+            )}
           </button>
         ) : (
           <button
-            className="flex items-center gap-2 px-6 py-2 rounded-xl bg-[#6B1D1D] text-white hover:bg-red-900 transition"
+            className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-[#6B1D1D] text-white hover:bg-red-900 transition min-w-[180px] disabled:opacity-60"
             onClick={handleVerify}
+            disabled={isVerifying}
           >
-            Verify & Continue <Check size={18} className="ml-1" />
+            {isVerifying ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
+                  ></path>
+                </svg>
+                Verifying...
+              </>
+            ) : (
+              <>
+                Verify & Continue <Check size={18} className="ml-1" />
+              </>
+            )}
           </button>
         )}
       </div>

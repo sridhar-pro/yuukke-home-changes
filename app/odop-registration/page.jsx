@@ -7,7 +7,6 @@ import SignUpStep from "./steps/SignUpStep";
 import ProfileStep from "./steps/ProfileStep";
 import PaymentStep from "./steps/PaymentStep";
 import StepIndicator from "./StepIndicator";
-import clsx from "clsx";
 
 const steps = ["Sign Up", "Profile", "Payment"];
 
@@ -61,98 +60,100 @@ const MultiStepForm = () => {
         );
       default:
         return (
-          <div className="relative flex items-center justify-center min-h-screen bg-white overflow-hidden -translate-y-16">
-            {/* 🍃 Decorative Leaves with Motion */}
-            {[
-              { top: "top-24", left: "left-[0rem]" },
-              { top: "top-56", left: "left-[6rem]" },
-              { top: "top-16", right: "right-[4rem]" },
-              { top: "top-40", right: "right-[3rem]" },
-            ].map((pos, idx) => (
-              <motion.div
-                key={idx}
-                className={`absolute bounce-opacity ${pos.top} ${
-                  pos.left || pos.right
-                } text-[#6B1D1D]`}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.2, duration: 0.6 }}
-              >
-                <Leaf size={22} />
-              </motion.div>
-            ))}
-
-            {/* 🎯 Hero Text */}
-            <motion.div
-              className="text-center p-6 space-y-6 max-w-3xl z-10 -translate-y-24 md:-translate-y-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <h1 className="text-[2.50rem] font-bold text-[#411111]">
-                Welcome to <span className="text-[#6B1D1D]">Yuukke</span>
-              </h1>
-              <h4 className="text-[1.60rem] font-semibold text-[#3F1F1F]">
-                The Marketplace for Conscious Sellers
-              </h4>
-              <p className="text-gray-600">
-                Reach conscious buyers and grow your sustainable business
-                effortlessly.
-              </p>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={nextStep}
-                className="bg-[#6B1D1D] hover:bg-[#551414] text-white px-24 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 mx-auto transition"
-              >
-                <ArrowRight size={18} />
-                <span>Start Onboarding</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={() => setShowWhy(!showWhy)}
-                className="bg-transparent hover:bg-gray-100 text-black px-20 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 mx-auto transition"
-              >
-                <Info size={18} className="text-gray-700" />
-                <span>Why Sell on Yuukke?</span>
-              </motion.button>
-
-              <p className="text-sm text-gray-500">
-                Trusted by 1,000+ sustainable brands
-              </p>
-            </motion.div>
-
-            {/* 🚪 Modal: Onboarding */}
-            {showModal && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
-              >
+          <>
+            <div className="font-odop  relative flex items-center justify-center h-auto md:min-h-screen bg-white overflow-hidden -translate-y-10 md:-translate-y-16 ">
+              {/* 🍃 Decorative Leaves with Motion */}
+              {[
+                { top: "top-24", left: "left-[0rem]" },
+                { top: "top-56", left: "left-[6rem]" },
+                { top: "top-16", right: "right-[4rem]" },
+                { top: "top-40", right: "right-[3rem]" },
+              ].map((pos, idx) => (
                 <motion.div
-                  ref={modalRef}
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+                  key={idx}
+                  className={`absolute bounce-opacity ${pos.top} ${
+                    pos.left || pos.right
+                  } text-[#6B1D1D]`}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.2, duration: 0.6 }}
                 >
-                  <button
-                    onClick={() => {
-                      setShowModal(false);
-                      setCurrentStep(1);
-                    }}
-                    className="absolute top-4 right-4 text-[#6B1D1D] hover:text-[#551414] transition border rounded-full p-1 bg-white"
-                  >
-                    <X size={16} className="text-gray-900" />
-                  </button>
+                  <Leaf size={22} />
                 </motion.div>
-              </motion.div>
-            )}
+              ))}
 
-            {/* 🌿 Modal: Why Yuukke */}
+              {/* 🎯 Hero Text */}
+              <motion.div
+                className="text-center p-6 space-y-4 z-10 md:-translate-y-20"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <h1 className="text-[3rem] font-bold text-[#411111]">
+                  Welcome to <span className="text-[#6B1D1D]">Yuukke</span>
+                </h1>
+                <h4 className="text-[1.875rem] font-semibold text-[#3F1F1F]">
+                  The Marketplace for Conscious Sellers
+                </h4>
+                <p className="text-gray-500 text-[1.25rem]">
+                  Reach conscious buyers and grow your sustainable business
+                  effortlessly.
+                </p>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={nextStep}
+                  className="bg-[#6B1D1D] hover:bg-[#551414] text-white px-24 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 mx-auto transition"
+                >
+                  <ArrowRight size={18} />
+                  <span>Start Onboarding</span>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => setShowWhy(!showWhy)}
+                  className="bg-transparent hover:bg-gray-100 text-black px-20 py-3 cursor-pointer rounded-xl font-medium w-full sm:w-auto flex items-center justify-center gap-2 mx-auto transition"
+                >
+                  <Info size={18} className="text-gray-700" />
+                  <span>Why Sell on Yuukke?</span>
+                </motion.button>
+
+                <p className="text-sm text-gray-500">
+                  Trusted by 1,000+ sustainable brands
+                </p>
+              </motion.div>
+
+              {/* 🚪 Modal: Onboarding */}
+              {showModal && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
+                >
+                  <motion.div
+                    ref={modalRef}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+                  >
+                    <button
+                      onClick={() => {
+                        setShowModal(false);
+                        setCurrentStep(1);
+                      }}
+                      className="absolute top-4 right-4 text-[#6B1D1D] hover:text-[#551414] transition border rounded-full p-1 bg-white"
+                    >
+                      <X size={16} className="text-gray-900" />
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* 🌿 Modal: Why Yuukke */}
+            </div>
             {showWhy && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -181,18 +182,18 @@ const MultiStepForm = () => {
                     {[
                       {
                         icon: <Heart className="text-[#6B1D1D]" size={20} />,
-                        title: "More Eco Buyers",
-                        text: "Connect with customers who actively seek sustainable products and care about the environment.",
+                        title: "Marketing Promotions",
+                        text: "Get Promoted as part of the Stronger Women Circle!",
                       },
                       {
                         icon: <Leaf className="text-[#6B1D1D]" size={20} />,
-                        title: "Verified Eco Tags",
-                        text: "Showcase your environmental credentials with our verified eco-certification system.",
+                        title: "Seller Support",
+                        text: "Our Dedicated Seller Support Team is available via phone, email, chat, and social media.",
                       },
                       {
                         icon: <Truck className="text-[#6B1D1D]" size={20} />,
-                        title: "Lower Carbon Logistics",
-                        text: "Use our eco-friendly shipping network with 30% lower carbon footprint.",
+                        title: "Yuukke Growth Tools",
+                        text: "Yuukke Marketplace Sellers get access to mentorship, webinars, community access.",
                       },
                     ].map((item, idx) => (
                       <motion.li
@@ -217,13 +218,13 @@ const MultiStepForm = () => {
                 </motion.div>
               </motion.div>
             )}
-          </div>
+          </>
         );
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start px-4 pt-10 pb-6">
+    <div className="flex flex-col items-center justify-start h-auto md:min-h-screen px-4 pt-10 pb-6">
       {/* Step Indicator */}
       {!hideStepIndicator && currentStep >= 0 && (
         <StepIndicator currentStep={currentStep} />
@@ -243,18 +244,6 @@ const MultiStepForm = () => {
             {renderStepContent()}
           </motion.div>
         </AnimatePresence>
-
-        {/* Next Button */}
-        {/* {currentStep >= 0 && currentStep < steps.length - 1 && (
-          <div className="mt-8 text-center">
-            <button
-              onClick={nextStep}
-              className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
-            >
-              Next
-            </button>
-          </div>
-        )} */}
       </div>
     </div>
   );

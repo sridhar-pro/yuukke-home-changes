@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Camera,
   BookOpenText,
+  Package,
+  Users,
 } from "lucide-react";
 
 const CongratsCard = ({ Icon, title, desc, delay = 0 }) => (
@@ -35,7 +37,7 @@ const Congratulations = () => {
       initial={{ opacity: 0, y: 60 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="w-full max-w-3xl mx-auto mt-10 px-4 py-10 bg-white text-center space-y-8 -translate-y-24"
+      className="font-odop w-full max-w-3xl mx-auto mt-10 px-4 py-10 bg-white text-center space-y-8 -translate-y-24"
     >
       {/* Check Icon */}
       <motion.div
@@ -130,18 +132,18 @@ const Congratulations = () => {
           {[
             {
               icon: <Camera className="text-[#6B1D1D]" size={20} />,
-              title: "Top Eco Photography Tips",
-              text: "Natural lighting showcases your sustainable products best",
+              title: "Snap with Style",
+              text: "Use natural lighting and neutral backgrounds to let your products do the talking — no fancy studio needed.",
             },
             {
-              icon: <BadgeCheck className="text-[#6B1D1D]" size={20} />,
-              title: "Boost Sales with Verified Plan",
-              text: "Products with certifications sell 40% more",
+              icon: <Users className="text-[#6B1D1D]" size={20} />,
+              title: "Engage Your Buyers",
+              text: "Respond promptly, ask for reviews, and build a loyal community that keeps coming back.",
             },
             {
-              icon: <TrendingUp className="text-[#6B1D1D]" size={20} />,
-              title: "Craft a Powerful Eco Story",
-              text: "Customers love hearing about your sustainability journey",
+              icon: <Package className="text-[#6B1D1D]" size={20} />,
+              title: "Smart & Safe Packaging",
+              text: "Eco-conscious, sturdy, and pretty packaging wins hearts and keeps your product safe in transit.",
             },
           ].map((item, idx) => (
             <motion.li
