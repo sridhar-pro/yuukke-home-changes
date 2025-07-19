@@ -67,12 +67,32 @@ const LanguageSwitcher = () => {
     const match = document.cookie.match(/googtrans=\/en\/(\w{2})/);
     const langCode = match?.[1]?.toLowerCase();
 
+    // 🧠 Part 1: Reset to English if NOT on /odop-registration and lang is NOT English
     if (!isOdopPage && langCode && langCode !== "en") {
-      // Clear the cookie to reset to English
       document.cookie =
         "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       sessionStorage.setItem("reset-reloaded", "true");
       window.location.reload();
+    }
+
+    // 🧠 Part 2: Force Hindi on /odop-registration if not already set
+    if (isOdopPage && !match) {
+      document.cookie = "googtrans=/en/hi; path=/;";
+
+      // Let the translate selector do its magical thing 🪄
+      setTimeout(() => {
+        const event = document.createEvent("HTMLEvents");
+        event.initEvent("change", true, true);
+        const select = document.querySelector(".goog-te-combo");
+
+        if (select) {
+          select.value = "hi";
+          select.dispatchEvent(event);
+        } else {
+          // Plan B like a boss: refresh
+          window.location.href = window.location.pathname;
+        }
+      }, 500);
     }
   }, [pathname]);
 
