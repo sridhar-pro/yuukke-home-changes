@@ -452,8 +452,16 @@ export default function Navbar() {
                     Uttar Pradesh
                   </a>
                   <a
-                    href="https://marketplace.yuukke.com/odop_register"
-                    className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-md rounded"
+                    href="/odop-registration"
+                    onClick={(e) => {
+                      e.preventDefault(); // Stop default nav
+                      document.cookie = "googtrans=/en/hi; path=/;";
+                      // Optional: clear the 'reset-reloaded' flag so we don't wipe this translation
+                      sessionStorage.removeItem("reset-reloaded");
+                      // Now trigger full reload to that page
+                      window.location.href = "/odop-registration";
+                    }}
+                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-md rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
                   >
                     ODOP Registration
                   </a>
