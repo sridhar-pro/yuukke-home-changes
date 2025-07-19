@@ -312,11 +312,12 @@ const SignUpStep = ({ nextStep, prevStep }) => {
                     d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
                   ></path>
                 </svg>
-                Sending...
+                <span translate="yes">Sending...</span>
               </>
             ) : (
               <>
-                Send Code <Shield className="w-4 h-4" />
+                <span translate="yes">Send Code</span>
+                <Shield className="w-4 h-4" />
               </>
             )}
           </button>
@@ -347,11 +348,12 @@ const SignUpStep = ({ nextStep, prevStep }) => {
                     d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
                   ></path>
                 </svg>
-                Verifying...
+                <span translate="yes">Verifying...</span>
               </>
             ) : (
               <>
-                Verify & Continue <Check size={18} className="ml-1" />
+                <span translate="yes">Verify &amp; Continue</span>
+                <Check size={18} className="ml-1" />
               </>
             )}
           </button>
