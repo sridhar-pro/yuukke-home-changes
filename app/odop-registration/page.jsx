@@ -29,6 +29,11 @@ const MultiStepForm = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    // 🔓 Allow translation on this page by clearing the reset flag
+    sessionStorage.removeItem("reset-reloaded");
+  }, []);
+
   const [currentStep, setCurrentStep] = useState(-1); // -1 means pre-start
 
   const nextStep = () => {

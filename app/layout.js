@@ -6,6 +6,7 @@ import LoaderWrapper from "./components/Loader/LoaderWrapper";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MobileBottomBar from "./components/MobileBottomBar";
+import TranslationResetWrapper from "./TranslationResetWrapper";
 
 export const metadata = {
   title: "Yuukke",
@@ -43,12 +44,15 @@ export default function RootLayout({ children }) {
       <body className="antialiased">
         <LoaderWrapper>
           <AuthProvider>
+            <TranslationResetWrapper />
+
             <main className="pb-16 md:pb-0">
               <Navbar />
               {children}
               <Footer />
             </main>
             <MobileBottomBar />
+
             <ToastContainer
               position="bottom-right"
               autoClose={3000}

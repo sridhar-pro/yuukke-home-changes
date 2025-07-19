@@ -12,6 +12,7 @@ const langMap = {
 };
 
 const LanguageSwitcher = () => {
+  const pathname = usePathname();
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentLang, setCurrentLang] = useState("EN"); // Default to English
   const dropdownRef = useRef(null);
@@ -62,10 +63,18 @@ const LanguageSwitcher = () => {
 
   // 📡 Get current language from cookie
   useEffect(() => {
+    const isOdopPage = pathname === "/odop-registration";
     const match = document.cookie.match(/googtrans=\/en\/(\w{2})/);
-    const langCode = match?.[1]?.toLowerCase() || "en";
-    setCurrentLang(langMap[langCode] || "EN");
-  }, []);
+    const langCode = match?.[1]?.toLowerCase();
+
+    if (!isOdopPage && langCode && langCode !== "en") {
+      // Clear the cookie to reset to English
+      document.cookie =
+        "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      sessionStorage.setItem("reset-reloaded", "true");
+      window.location.reload();
+    }
+  }, [pathname]);
 
   // 🈂️ Switch language
   const handleTranslate = (lang) => {
@@ -90,8 +99,6 @@ const LanguageSwitcher = () => {
       }
     }, 500);
   };
-
-  const pathname = usePathname();
 
   // Reapply the translation on route change
   useEffect(() => {

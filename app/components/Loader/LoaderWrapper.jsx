@@ -7,7 +7,7 @@ const LoaderWrapper = ({ children }) => {
 
   useEffect(() => {
     const handlePageLoad = () => {
-      setTimeout(() => setLoading(false), 1000); // optional delay for dramatic flair 💃
+      setTimeout(() => setLoading(false)); // optional delay for dramatic flair 💃
     };
 
     if (document.readyState === "complete") {
