@@ -264,7 +264,7 @@ export default function Navbar() {
                   >
                     Uttar Pradesh
                   </a>
-                  <a
+                  {/* <a
                     href="/odop-registration"
                     onClick={(e) => {
                       e.preventDefault(); // Stop default nav
@@ -277,7 +277,13 @@ export default function Navbar() {
                     className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-sm rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
                   >
                     ODOP Registration
-                  </a>
+                  </a> */}
+                  <Link
+                    href="/odop-registration"
+                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-sm rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
+                  >
+                    ODOP Registration
+                  </Link>
                 </div>
               </div>
 
@@ -451,7 +457,7 @@ export default function Navbar() {
                   >
                     Uttar Pradesh
                   </a>
-                  <a
+                  {/* <a
                     href="/odop-registration"
                     onClick={(e) => {
                       e.preventDefault(); // Stop default nav
@@ -464,7 +470,13 @@ export default function Navbar() {
                     className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-md rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
                   >
                     ODOP Registration
-                  </a>
+                  </a> */}
+                  <Link
+                    href="/odop-registration"
+                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-sm rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
+                  >
+                    ODOP Registration
+                  </Link>
                 </div>
               )}
             </div>

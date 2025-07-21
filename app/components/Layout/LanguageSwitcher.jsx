@@ -12,7 +12,6 @@ const langMap = {
 };
 
 const LanguageSwitcher = () => {
-  const pathname = usePathname();
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentLang, setCurrentLang] = useState("EN"); // Default to English
   const dropdownRef = useRef(null);
@@ -63,47 +62,33 @@ const LanguageSwitcher = () => {
 
   // 📡 Get current language from cookie
   useEffect(() => {
-    const isOdopPage = pathname === "/odop-registration";
     const match = document.cookie.match(/googtrans=\/en\/(\w{2})/);
     const langCode = match?.[1]?.toLowerCase();
 
-    // 🧠 Part 1: Reset to English if NOT on /odop-registration and lang is NOT English
-    if (!isOdopPage && langCode && langCode !== "en") {
-      document.cookie =
-        "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      sessionStorage.setItem("reset-reloaded", "true");
-      window.location.reload();
-    }
-
-    // 🧠 Part 2: Force Hindi on /odop-registration if not already set
-    if (isOdopPage && !match) {
+    if (!langCode) {
+      // No language set, default to Hindi
       document.cookie = "googtrans=/en/hi; path=/;";
+      setCurrentLang("HI");
 
-      // Let the translate selector do its magical thing 🪄
+      // Trigger translation
       setTimeout(() => {
         const event = document.createEvent("HTMLEvents");
         event.initEvent("change", true, true);
         const select = document.querySelector(".goog-te-combo");
-
         if (select) {
           select.value = "hi";
           select.dispatchEvent(event);
-        } else {
-          // Plan B like a boss: refresh
-          window.location.href = window.location.pathname;
         }
       }, 500);
+    } else {
+      setCurrentLang(langMap[langCode] || "EN");
     }
-  }, [pathname]);
+  }, []);
 
   // 🈂️ Switch language
   const handleTranslate = (lang) => {
-    if (lang === "en") {
-      document.cookie =
-        "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    } else {
-      document.cookie = `googtrans=/en/${lang}; path=/;`;
-    }
+    // 🍪 Set the cookie correctly even for English
+    document.cookie = `googtrans=/en/${lang}; path=/;`;
 
     // 🔁 Force a re-translation
     setTimeout(() => {
@@ -119,6 +104,8 @@ const LanguageSwitcher = () => {
       }
     }, 500);
   };
+
+  const pathname = usePathname();
 
   // Reapply the translation on route change
   useEffect(() => {

@@ -44,8 +44,6 @@ export default function RootLayout({ children }) {
       <body className="antialiased">
         <LoaderWrapper>
           <AuthProvider>
-            <TranslationResetWrapper />
-
             <main className="pb-16 md:pb-0">
               <Navbar />
               {children}
