@@ -83,6 +83,7 @@ export function ImagesSliderDemo() {
     exit: { opacity: 0, scale: 1.02 },
   };
 
+  // {added auto-slide}
   useEffect(() => {
     if (images.length <= 1) return; // Don't auto-slide if only 1 image
 

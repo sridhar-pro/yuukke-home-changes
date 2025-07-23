@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function AllProductsPage() {
   const [products, setProducts] = useState([]);
@@ -201,7 +202,7 @@ export default function AllProductsPage() {
               className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6"
             >
               <div className="flex items-center gap-3 mb-4">
-                <h3 className="text-lg font-bold text-black italic uppercase">
+                <h3 className="text-lg font-bold text-black uppercase">
                   Availability
                 </h3>
               </div>
@@ -248,7 +249,7 @@ export default function AllProductsPage() {
               className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6"
             >
               <div className="flex items-center gap-3 mb-6">
-                <h3 className="text-lg font-bold text-black italic uppercase">
+                <h3 className="text-lg font-bold text-black uppercase">
                   Categories
                 </h3>
               </div>
@@ -619,8 +620,8 @@ export default function AllProductsPage() {
                 </motion.button>
               </div>
             </div>
-
             {/* Products Grid */}
+
             {products.length > 0 ? (
               <motion.div
                 layout
@@ -631,82 +632,84 @@ export default function AllProductsPage() {
                 }`}
               >
                 {products.map((product, index) => (
-                  <motion.div
-                    key={product.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    whileHover={{ y: -5 }}
-                    className="group rounded-3xl bg-white transition-all duration-300 overflow-hidden"
-                  >
-                    <div className="relative">
-                      <div className="relative w-full h-40 md:h-56 rounded-2xl overflow-hidden mb-3 md:mb-4 group">
-                        <Image
-                          src={getImageSrc(product.image)}
-                          alt={product.name || "Image not found!"}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                          className="object-contain"
-                        />
-                      </div>
+                  <Link href={`/products/${product.slug}`} key={product.id}>
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.05 }}
+                      whileHover={{ y: -5 }}
+                      className="group rounded-3xl bg-white transition-all duration-300 overflow-hidden cursor-pointer"
+                    >
+                      <div className="relative">
+                        <div className="relative w-full h-40 md:h-56 rounded-2xl overflow-hidden mb-3 md:mb-4 group">
+                          <Image
+                            src={getImageSrc(product.image)}
+                            alt={product.name || "Image not found!"}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                            className="object-contain"
+                          />
+                        </div>
 
-                      <div className="absolute top-3 right-3 flex gap-2 z-10">
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className="p-2 bg-white/70 backdrop-blur-sm rounded-full shadow hover:bg-white transition-all"
-                        >
-                          <Heart className="w-4 h-4 text-gray-700" />
-                        </motion.button>
-                      </div>
-                    </div>
-
-                    <div className="p-5">
-                      <h3 className="text-xs md:text-base font-semibold line-clamp-2 mb-0.5 md:mb-1 capitalize">
-                        {product.name}
-                      </h3>
-
-                      <div className="flex items-center justify-between">
-                        {/* Price Display */}
-                        <div className="space-y-1 mt-1">
-                          {product.promo_price &&
-                          product.end_date &&
-                          new Date(product.end_date) > new Date() ? (
-                            <>
-                              <div className="flex items-baseline gap-1.5 md:gap-2 flex-wrap">
-                                <p className="text-sm md:text-lg font-bold ">
-                                  ₹{Number(product.promo_price).toFixed(2)}
-                                </p>
-                                <p className="text-xs md:text-sm text-gray-400 line-through">
-                                  ₹{Number(product.price).toFixed(2)}
-                                </p>
-                              </div>
-
-                              {/* Show discount badge only on mobile in next line */}
-                              <span className="block md:inline text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg md:ml-2">
-                                {Math.round(
-                                  ((Number(product.price) -
-                                    Number(product.promo_price)) /
-                                    Number(product.price)) *
-                                    100
-                                )}
-                                % OFF
-                              </span>
-                            </>
-                          ) : (
-                            <p
-                              className={`text-sm md:text-lg font-bold ${
-                                isOutOfStock ? "text-gray-500" : "text-gray-900"
-                              }`}
-                            >
-                              ₹{Number(product.price).toFixed(2)}
-                            </p>
-                          )}
+                        <div className="absolute top-3 right-3 flex gap-2 z-10">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="p-2 bg-white/70 backdrop-blur-sm rounded-full shadow hover:bg-white transition-all"
+                            onClick={(e) => e.preventDefault()} // Prevents link navigation on heart click
+                          >
+                            <Heart className="w-4 h-4 text-gray-700" />
+                          </motion.button>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
+
+                      <div className="p-5">
+                        <h3 className="text-xs md:text-base font-semibold line-clamp-2 mb-0.5 md:mb-1 capitalize">
+                          {product.name}
+                        </h3>
+
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1 mt-1">
+                            {product.promo_price &&
+                            product.end_date &&
+                            new Date(product.end_date) > new Date() ? (
+                              <>
+                                <div className="flex items-baseline gap-1.5 md:gap-2 flex-wrap">
+                                  <p className="text-sm md:text-lg font-bold ">
+                                    ₹{Number(product.promo_price).toFixed(2)}
+                                  </p>
+                                  <p className="text-xs md:text-sm text-gray-400 line-through">
+                                    ₹{Number(product.price).toFixed(2)}
+                                  </p>
+                                </div>
+
+                                <span className="block md:inline text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg md:ml-2">
+                                  {Math.round(
+                                    ((Number(product.price) -
+                                      Number(product.promo_price)) /
+                                      Number(product.price)) *
+                                      100
+                                  )}
+                                  % OFF
+                                </span>
+                              </>
+                            ) : (
+                              <p
+                                className={`text-sm md:text-lg font-bold ${
+                                  isOutOfStock
+                                    ? "text-gray-500"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                ₹{Number(product.price).toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Link>
                 ))}
               </motion.div>
             ) : (
