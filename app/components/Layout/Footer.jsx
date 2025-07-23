@@ -1,10 +1,20 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { useAuth } from "@/app/utils/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCategories } from "@/app/slices/categorySlice";
+import { AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Footer() {
-  const { getValidToken, isAuthReady } = useAuth();
+  const dispatch = useDispatch();
+  const { isAuthReady, getValidToken } = useAuth();
+
+  const reduxCategories = useSelector((state) => state.categories.list);
+  const loading = useSelector((state) => state.categories.loading);
+  const error = useSelector((state) => state.categories.error);
+
   const [apiCategories, setApiCategories] = useState([]);
 
   const staticSection = {
@@ -29,95 +39,43 @@ export default function Footer() {
     ],
   };
 
+  // ✅ Fetch and sync once auth is ready
   useEffect(() => {
-    if (!isAuthReady) return; // ⏳ Wait until auth context is ready
+    if (isAuthReady && reduxCategories.length === 0) {
+      dispatch(fetchCategories(getValidToken));
+    }
+  }, [isAuthReady]);
 
-    const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+  useEffect(() => {
+    if (reduxCategories?.length > 0) {
+      setApiCategories(reduxCategories);
+    }
+  }, [reduxCategories]);
 
-    const getTokenWithRetry = async (maxAttempts = 10, delay = 500) => {
-      let attempt = 0;
-      while (attempt < maxAttempts) {
-        const token = await getValidToken();
+  const footerData = useMemo(() => {
+    return [staticSection, ...apiCategories];
+  }, [apiCategories]);
 
-        if (token && typeof token === "string" && token.length > 10) {
-          return token;
-        }
+  // if (loading) {
+  //   return (
+  //     <div className="flex justify-center items-center py-10">
+  //       <div className="w-8 h-8 border-4 border-gray-300 border-t-primary rounded-full animate-spin" />
+  //       <span className="ml-3 text-sm text-gray-500"></span>
+  //     </div>
+  //   );
+  // }
 
-        if (attempt === 5) {
-          localStorage.removeItem("authToken"); // force refresh if token exists but is trash
-        }
-
-        await wait(delay);
-        attempt++;
-      }
-
-      throw new Error("❌ Auth token unavailable after multiple retries.");
-    };
-
-    const fetchWithAuth = async (url, retry = false) => {
-      try {
-        const token = await getTokenWithRetry();
-
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.status === 401 && !retry) {
-          console.warn("⚠️ Received 401. Retrying after token reset...");
-          localStorage.removeItem("authToken");
-          return await fetchWithAuth(url, true);
-        }
-
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error(`❌ HTTP ${res.status}:`, errText);
-          return null;
-        }
-
-        return await res.json();
-      } catch (err) {
-        console.error("🚨 fetchWithAuth error:", err.message);
-        return null;
-      }
-    };
-
-    const fetchCategories = async () => {
-      try {
-        const data = await fetchWithAuth("/api/homeCategory");
-
-        if (!data) return; // 🛑 Abort on fetch failure
-
-        const formattedData = data
-          .map((category) => {
-            const validSubcategories = (category.subcategories || [])
-              .filter((sub) => sub?.name && sub?.slug)
-              .map((sub) => ({
-                name: sub.name,
-                slug: sub.slug,
-                parentSlug: category.slug,
-              }));
-
-            return {
-              title: category.name,
-              parentSlug: category.slug,
-              links: validSubcategories,
-            };
-          })
-          .filter((category) => category.links.length > 0);
-
-        setApiCategories(formattedData);
-      } catch (error) {
-        console.error("❌ Error processing categories:", error);
-      }
-    };
-
-    fetchCategories();
-  }, [getValidToken, isAuthReady]);
-
-  const footerData = [staticSection, ...apiCategories];
-  // console.log("Complete footer data:", footerData);
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 text-red-600">
+        <AlertTriangle className="w-6 h-6 mb-2" />
+        <p className="font-semibold text-sm">
+          Oops! Something went wrong loading the footer.
+        </p>
+        <p className="text-xs text-gray-500">({error})</p>
+      </div>
+    );
+  }
 
   return (
     <footer className="bg-white text-sm text-[#911439]">
@@ -150,58 +108,72 @@ export default function Footer() {
       </div>
 
       {/* Footer Links Section */}
-      {/* Footer Links Section - Updated to handle empty states */}
       <div className="w-full px-4">
         <div className="w-full mx-auto px-0 md:px-6 py-6">
-          {footerData.map((section, index) => (
-            <div
-              key={`section-${index}`}
-              className={
-                section.title === "Quick Links"
-                  ? "border-y border-gray-300 w-full py-6"
-                  : "py-2"
-              }
-            >
-              <div className="text-xs">
-                {section.title === "Quick Links" ? (
-                  <h4 className="font-bold underline">
-                    {section.title
-                      .replace(/&#039;/g, "'")
-                      .replace(/&amp;/g, "&")}
-                  </h4>
-                ) : (
-                  <a
-                    href={`https://marketplace.yuukke.com/category/${section.parentSlug}`}
-                    className="font-bold underline hover:text-[#6e0e2d]"
-                  >
-                    {section.title
-                      .replace(/&#039;/g, "'")
-                      .replace(/&amp;/g, "&")}
-                  </a>
-                )}
-
-                <div className="flex flex-wrap gap-2 text-[#911439]">
-                  {section.links.map((link, idx) => (
-                    <span key={`link-${index}-${idx}`}>
-                      {idx > 0 && <span className="mx-0 md:mx-1">|</span>}
-                      <a
-                        href={
-                          link.slug.startsWith("http")
-                            ? link.slug
-                            : `https://marketplace.yuukke.com/category/${link.parentSlug}/${link.slug}`
-                        }
-                        className="hover:underline"
-                      >
-                        {link.name
-                          .replace(/&#039;/g, "'")
-                          .replace(/&amp;/g, "&")}
-                      </a>
-                    </span>
-                  ))}
-                </div>
-              </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-6">
+              <div className="w-6 h-6 border-4 border-gray-300 border-t-[#911439] rounded-full animate-spin" />
+              <span className="ml-3 text-sm text-gray-500"></span>
             </div>
-          ))}
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-6 text-red-600">
+              <AlertTriangle className="w-5 h-5 mb-1" />
+              <p className="text-xs">Couldn’t load more links. ({error})</p>
+            </div>
+          ) : (
+            footerData.map((section, index) => (
+              <motion.div
+                key={`section-${index}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.4 }}
+                className={
+                  section.title === "Quick Links"
+                    ? "border-y border-gray-300 w-full py-6"
+                    : "py-2"
+                }
+              >
+                <div className="text-xs">
+                  {section.title === "Quick Links" ? (
+                    <h4 className="font-bold underline">
+                      {section.title
+                        .replace(/&#039;/g, "'")
+                        .replace(/&amp;/g, "&")}
+                    </h4>
+                  ) : (
+                    <a
+                      href={`https://marketplace.yuukke.com/category/${section.parentSlug}`}
+                      className="font-bold underline hover:text-[#6e0e2d]"
+                    >
+                      {section.title
+                        .replace(/&#039;/g, "'")
+                        .replace(/&amp;/g, "&")}
+                    </a>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 text-[#911439]">
+                    {section.links.map((link, idx) => (
+                      <span key={`link-${index}-${idx}`}>
+                        {idx > 0 && <span className="mx-0 md:mx-1">|</span>}
+                        <a
+                          href={
+                            link.slug.startsWith("http")
+                              ? link.slug
+                              : `https://marketplace.yuukke.com/category/${link.parentSlug}/${link.slug}`
+                          }
+                          className="hover:underline"
+                        >
+                          {link.name
+                            .replace(/&#039;/g, "'")
+                            .replace(/&amp;/g, "&")}
+                        </a>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
       </div>
 

@@ -241,8 +241,10 @@ export default function Navbar() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No categories available
+                    <div className="flex justify-center py-8 space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-gray-300 animate-pulse"></div>
+                      <div className="w-3 h-3 rounded-full bg-gray-300 animate-pulse delay-100"></div>
+                      <div className="w-3 h-3 rounded-full bg-gray-300 animate-pulse delay-200"></div>
                     </div>
                   )}
                 </div>

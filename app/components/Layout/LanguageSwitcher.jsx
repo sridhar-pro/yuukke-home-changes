@@ -16,7 +16,6 @@ const LanguageSwitcher = () => {
   const [currentLang, setCurrentLang] = useState("EN");
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
-  const pathname = usePathname();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,12 +25,12 @@ const LanguageSwitcher = () => {
         !buttonRef.current.contains(event.target)
       ) {
         setShowDropdown(false);
-        document.body.style.overflow = "";
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("touchstart", handleClickOutside);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
@@ -48,6 +47,8 @@ const LanguageSwitcher = () => {
             layout:
               window.google.translate.TranslateElement.InlineLayout.SIMPLE,
             autoDisplay: false,
+            gaTrack: true,
+            gaId: "UA-XXXXX-X",
           },
           "google_translate_element"
         );
@@ -60,44 +61,39 @@ const LanguageSwitcher = () => {
         "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
       script.async = true;
       document.body.appendChild(script);
+
       window.googleTranslateElementInit = loadGoogleTranslate;
     } else {
       loadGoogleTranslate();
     }
   }, []);
 
-  const hasInitializedLang = useRef(false);
-
   useEffect(() => {
-    if (hasInitializedLang.current) return;
-    hasInitializedLang.current = true;
-
     const getLanguage = () => {
       const match = document.cookie.match(/googtrans=\/en\/(\w{2})/);
       const langCode = match?.[1]?.toLowerCase();
 
       if (!langCode) {
-        const defaultLang = "hi";
-        document.cookie = `googtrans=/en/${defaultLang}; path=/; domain=${window.location.hostname};`;
+        const isMobile =
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+          );
+        const defaultLang = isMobile ? "hi" : "en";
+
+        document.cookie = `googtrans=/en/${defaultLang}; path=/;`;
         setCurrentLang(langMap[defaultLang] || "EN");
 
         setTimeout(() => {
           const select = document.querySelector(".goog-te-combo");
           if (select) {
             select.value = defaultLang;
-            select.dispatchEvent(new Event("change"));
+            const evt = document.createEvent("HTMLEvents");
+            evt.initEvent("change", true, true);
+            select.dispatchEvent(evt);
           }
         }, 500);
       } else {
         setCurrentLang(langMap[langCode] || "EN");
-      }
-
-      if (process.env.NODE_ENV !== "production") {
-        if (!window.__langLoggedOnce) {
-          console.log("Initial Language:", langCode || "hi");
-          console.log("Cookie:", document.cookie);
-          window.__langLoggedOnce = true;
-        }
       }
     };
 
@@ -105,25 +101,23 @@ const LanguageSwitcher = () => {
   }, []);
 
   const handleTranslate = (lang) => {
-    document.cookie = `googtrans=/en/${lang}; path=/; domain=${window.location.hostname};`;
+    document.cookie = `googtrans=/en/${lang}; path=/;`;
     setCurrentLang(langMap[lang] || "EN");
-
-    if (process.env.NODE_ENV !== "production") {
-      console.log("Language Selected:", lang);
-      console.log("Cookie after selection:", document.cookie);
-    }
 
     setTimeout(() => {
       const select = document.querySelector(".goog-te-combo");
       if (select) {
         select.value = lang;
-        select.dispatchEvent(new Event("change"));
+        const evt = document.createEvent("HTMLEvents");
+        evt.initEvent("change", true, true);
+        select.dispatchEvent(evt);
       } else {
-        // fallback: if not found, reload the page to apply translation
         window.location.reload();
       }
-    }, 500);
+    }, 300);
   };
+
+  const pathname = usePathname();
 
   useEffect(() => {
     const applyTranslation = () => {
@@ -136,9 +130,11 @@ const LanguageSwitcher = () => {
           const select = document.querySelector(".goog-te-combo");
           if (select) {
             select.value = langCode;
-            select.dispatchEvent(new Event("change"));
+            const evt = document.createEvent("HTMLEvents");
+            evt.initEvent("change", true, true);
+            select.dispatchEvent(evt);
           }
-        }, 500);
+        }, 300);
       }
     };
 
@@ -148,8 +144,12 @@ const LanguageSwitcher = () => {
 
   const handleToggle = () => {
     setShowDropdown((prev) => {
-      document.body.style.overflow = !prev ? "hidden" : "";
-      return !prev;
+      if (!prev) {
+        document.body.style.overflow = "hidden";
+        return true;
+      }
+      document.body.style.overflow = "";
+      return false;
     });
   };
 

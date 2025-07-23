@@ -6,7 +6,7 @@ import LoaderWrapper from "./components/Loader/LoaderWrapper";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MobileBottomBar from "./components/MobileBottomBar";
-import TranslationResetWrapper from "./TranslationResetWrapper";
+import ReduxProvider from "./ReduxProvider";
 
 export const metadata = {
   title: "Yuukke",
@@ -42,36 +42,38 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="antialiased">
-        <LoaderWrapper>
-          <AuthProvider>
-            <main className="pb-16 md:pb-0">
-              <Navbar />
-              {children}
-              <Footer />
-            </main>
-            <MobileBottomBar />
+        <ReduxProvider>
+          <LoaderWrapper>
+            <AuthProvider>
+              <main className="pb-16 md:pb-0">
+                <Navbar />
+                {children}
+                <Footer />
+              </main>
+              <MobileBottomBar />
 
-            <ToastContainer
-              position="bottom-right"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="light"
-              toastStyle={{
-                backgroundColor: "#ffffff",
-                color: "#333333",
-                borderRadius: "8px",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-              }}
-              bodyClassName="font-sans text-sm"
-            />
-          </AuthProvider>
-        </LoaderWrapper>
+              <ToastContainer
+                position="bottom-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+                toastStyle={{
+                  backgroundColor: "#ffffff",
+                  color: "#333333",
+                  borderRadius: "8px",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                }}
+                bodyClassName="font-sans text-sm"
+              />
+            </AuthProvider>
+          </LoaderWrapper>
+        </ReduxProvider>
       </body>
     </html>
   );
