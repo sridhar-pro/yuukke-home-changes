@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { containerVariants, itemVariants } from "../utils/variants";
 import {
@@ -16,6 +17,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function AllProductsPage() {
+  const searchParams = useSearchParams();
+  const categorySlugFromQuery = searchParams.get("category");
+
   const [products, setProducts] = useState([]);
   const hasFetched = useRef(false);
   // Filter states
@@ -41,6 +45,28 @@ export default function AllProductsPage() {
     return `https://marketplace.yuukke.com/assets/uploads/${image}`;
   };
 
+  const sortOptions = [
+    { value: "1nto", label: "Newest" },
+    { value: "1f", label: "Featured" },
+    { value: "1bs", label: "Best Seller" },
+    { value: "1plth", label: "Price: Low to High" },
+    { value: "1phtl", label: "Price: High to Low" },
+  ];
+
+  useEffect(() => {
+    if (!categorySlugFromQuery || categories.length === 0) return;
+
+    const matchedCategory = categories.find(
+      (cat) => cat.slug === categorySlugFromQuery
+    );
+
+    if (matchedCategory) {
+      setSelectedCategory(matchedCategory.id);
+      // reset sub/subsub and fetch
+      fetchProductsByCategory(matchedCategory.id, null, null);
+    }
+  }, [categorySlugFromQuery, categories]);
+
   const { getValidToken, isAuthReady } = useAuth();
 
   useEffect(() => {
@@ -52,6 +78,7 @@ export default function AllProductsPage() {
       let attempt = 0;
       while (attempt < maxAttempts) {
         const token = await getValidToken();
+        console.log("🕵️‍♂️ Retrieved token:", token);
 
         if (token && typeof token === "string" && token.length > 10) {
           return token;
@@ -118,22 +145,15 @@ export default function AllProductsPage() {
     fetchCategories();
   }, [getValidToken, isAuthReady]);
 
-  const sortOptions = [
-    { value: "1nto", label: "Newest" },
-    { value: "1f", label: "Featured" },
-    { value: "1bs", label: "Best Seller" },
-    { value: "1plth", label: "Price: Low to High" },
-    { value: "1phtl", label: "Price: High to Low" },
-  ];
-
   const fetchProductsByCategory = async (
     categoryId,
     subcategoryId,
     subSubcategoryId,
     page = 1,
-    sortValue = "1nto", // default to featured
-    inStockValue = false, // 💡 default to false
-    priceRange = [1, 100000]
+    sortValue = "1nto",
+    inStockValue = false,
+    priceRange = [1, 100000],
+    retry = false // 🔁 Track if this is a retry
   ) => {
     const token = localStorage.getItem("authToken");
     setIsLoading(true);
@@ -153,7 +173,7 @@ export default function AllProductsPage() {
         sorting: "name-asc",
         min_price: `${priceRange[0]}`,
         max_price: `${priceRange[1]}`,
-        in_stock: inStockValue ? "1" : "0", // ✅ use inStockValue here
+        in_stock: inStockValue ? "1" : "0",
         page: `${page}`,
         sort_by_v: sortValue,
         limit: 24,
@@ -171,6 +191,22 @@ export default function AllProductsPage() {
         body: JSON.stringify(body),
       });
 
+      if (res.status === 401 && !retry) {
+        console.warn("🛑 Unauthorized! Retrying once after clearing token...");
+        localStorage.removeItem("authToken");
+
+        return await fetchProductsByCategory(
+          categoryId,
+          subcategoryId,
+          subSubcategoryId,
+          page,
+          sortValue,
+          inStockValue,
+          priceRange,
+          true // 🔁 Retry now
+        );
+      }
+
       if (!res.ok) throw new Error(`API error: ${res.status}`);
 
       const data = await res.json();
@@ -183,13 +219,11 @@ export default function AllProductsPage() {
       console.log("📦 Products response:", data);
 
       setProducts(data?.products || []);
-
-      // 🧠 Set total pages here based on API response
-      setTotalPages(data?.info?.total_page || 1); // 👈 THIS LINE IS THE STAR
+      setTotalPages(data?.info?.total_page || 1);
     } catch (err) {
       console.error("❌ Fetching products failed:", err);
     } finally {
-      setIsLoading(false); // Set loading to false when done
+      setIsLoading(false);
     }
   };
 

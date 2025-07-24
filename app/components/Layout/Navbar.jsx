@@ -218,7 +218,7 @@ export default function Navbar() {
               {/* Products Dropdown - Updated to use group-hover like ODOP */}
               <div className="relative group">
                 <Link
-                  href="#"
+                  href="/products"
                   className="group transition-all flex items-center gap-1 py-2 px-1 font-medium text-gray-700 hover:text-gray-900 cursor-pointer"
                 >
                   Products
@@ -229,15 +229,18 @@ export default function Navbar() {
                   {productCategories.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                       {productCategories.map((category) => (
-                        <a
+                        <Link
                           key={category.id || category.slug}
-                          href={`https://marketplace.yuukke.com/category/${category.slug}`}
+                          href={{
+                            pathname: "/products",
+                            query: { category: category.slug },
+                          }}
                           className="group flex flex-col items-center hover:bg-gray-50 rounded-lg p-4 transition-all duration-200"
                         >
                           <span className="text-sm font-medium text-gray-800 group-hover:text-black text-center">
                             {category.name}
                           </span>
-                        </a>
+                        </Link>
                       ))}
                     </div>
                   ) : (
@@ -475,7 +478,7 @@ export default function Navbar() {
                   </a> */}
                   <Link
                     href="/odop-registration"
-                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-sm rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
+                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-md rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
                   >
                     ODOP Registration
                   </Link>
