@@ -70,11 +70,13 @@ const LanguageSwitcher = () => {
       return;
     }
 
+    // Set cookie safely
+    document.cookie = `googtrans=/en/${lang}; path=/; secure`;
+
     const applyTranslation = () => {
       const googleFrame = document.querySelector("iframe.goog-te-menu-frame");
       if (!googleFrame) {
         // Fallback: set cookie and reload
-        document.cookie = `googtrans=/en/${lang}`;
         location.reload();
         return;
       }
@@ -94,12 +96,11 @@ const LanguageSwitcher = () => {
       });
 
       if (!clicked) {
-        document.cookie = `googtrans=/en/${lang}`;
         location.reload();
       }
     };
 
-    // 🔄 Delay to ensure iframe is loaded
+    // Try clicking the translation
     setTimeout(applyTranslation, 500);
   };
 
