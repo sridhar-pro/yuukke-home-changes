@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
+  IndianRupee,
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
 import Image from "next/image";
@@ -20,6 +21,8 @@ export default function AllProductsPage() {
   const searchParams = useSearchParams();
   const categorySlugFromQuery = searchParams.get("category");
 
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+
   const [products, setProducts] = useState([]);
   const hasFetched = useRef(false);
   // Filter states
@@ -27,7 +30,7 @@ export default function AllProductsPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [selectedSubSubcategory, setSelectedSubSubcategory] = useState(null);
   const [inStock, setInStock] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [priceRange, setPriceRange] = useState(0);
   const [viewMode, setViewMode] = useState("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -62,8 +65,9 @@ export default function AllProductsPage() {
 
     if (matchedCategory) {
       setSelectedCategory(matchedCategory.id);
-      // reset sub/subsub and fetch
-      fetchProductsByCategory(matchedCategory.id, null, null);
+      // reset sub/subsub categories
+      setSelectedSubcategory(null);
+      setSelectedSubSubcategory(null);
     }
   }, [categorySlugFromQuery, categories]);
 
@@ -156,7 +160,9 @@ export default function AllProductsPage() {
     retry = false // 🔁 Track if this is a retry
   ) => {
     const token = localStorage.getItem("authToken");
+    console.time("🛒 fetchProducts");
     setIsLoading(true);
+    setHasLoadedOnce(false); // optional: reset if needed
 
     const isValidId = (val) => val !== null && val !== undefined;
 
@@ -220,25 +226,21 @@ export default function AllProductsPage() {
 
       setProducts(data?.products || []);
       setTotalPages(data?.info?.total_page || 1);
+      setHasLoadedOnce(true); // ✅ Set true only after success
     } catch (err) {
       console.error("❌ Fetching products failed:", err);
+      setHasLoadedOnce(true); // ✅ Even on error, set true to prevent blink
     } finally {
       setIsLoading(false);
+      console.timeEnd("🛒 fetchProducts");
     }
   };
 
   useEffect(() => {
-    if (!isAuthReady) return;
+    if (!isAuthReady || categories.length === 0) return;
 
-    if (
-      selectedCategory === undefined ||
-      selectedSubcategory === undefined ||
-      selectedSubSubcategory === undefined
-    )
-      return;
-
-    if (!hasFetched.current) {
-      hasFetched.current = true;
+    // 👉 If category is selected (via slug or user click), fetch filtered
+    if (selectedCategory !== null) {
       fetchProductsByCategory(
         selectedCategory,
         selectedSubcategory,
@@ -248,15 +250,8 @@ export default function AllProductsPage() {
         inStock
       );
     } else {
-      // On changes after first load
-      fetchProductsByCategory(
-        selectedCategory,
-        selectedSubcategory,
-        selectedSubSubcategory,
-        currentPage,
-        sortBy,
-        inStock
-      );
+      // 👉 Else fetch all products without filters
+      fetchProductsByCategory(null, null, null, currentPage, sortBy, inStock);
     }
   }, [
     selectedCategory,
@@ -266,6 +261,7 @@ export default function AllProductsPage() {
     sortBy,
     inStock,
     isAuthReady,
+    categories,
   ]);
 
   return (
@@ -324,6 +320,107 @@ export default function AllProductsPage() {
                 </div>
                 <span className="font-medium text-gray-700">In Stock Only</span>
               </motion.label>
+            </motion.div>
+
+            {/* Price Range Section */}
+            {/* Price Range Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
+            >
+              {/* Header */}
+              <div className="mb-5">
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Price Filter
+                </h3>
+              </div>
+
+              <div className="space-y-5">
+                {/* Slider with min/max labels */}
+                <div>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1 px-1">
+                    <span>₹0</span>
+                    <span>₹10,000</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="10000"
+                    step="100"
+                    value={priceRange}
+                    onChange={(e) => setPriceRange(Number(e.target.value))}
+                    className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer 
+          [&::-webkit-slider-thumb]:appearance-none
+          [&::-webkit-slider-thumb]:h-4
+          [&::-webkit-slider-thumb]:w-4
+          [&::-webkit-slider-thumb]:rounded-full
+          [&::-webkit-slider-thumb]:bg-black
+          [&::-webkit-slider-thumb]:border-2
+          [&::-webkit-slider-thumb]:border-white
+          [&::-webkit-slider-thumb]:shadow-sm
+          [&::-webkit-slider-thumb]:cursor-pointer"
+                  />
+                </div>
+
+                {/* Combined button with price */}
+                <motion.button
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                  }}
+                  whileTap={{
+                    scale: 0.98,
+                    boxShadow: "none",
+                  }}
+                  onClick={() =>
+                    fetchProductsByCategory(
+                      selectedCategory,
+                      selectedSubcategory,
+                      selectedSubSubcategory,
+                      currentPage,
+                      sortBy,
+                      inStock,
+                      [0, priceRange]
+                    )
+                  }
+                  className="w-full bg-black text-white py-2.5 px-4 rounded-lg font-medium 
+        hover:shadow-sm transition-all flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Apply Filter
+                  </span>
+                  <span className="flex items-center bg-gray-800 rounded-md px-2 py-1 text-sm">
+                    <IndianRupee className="w-3 h-3 mr-0.5" />
+                    {priceRange.toLocaleString()}
+                  </span>
+                </motion.button>
+              </div>
             </motion.div>
 
             {/* Categories Section */}
@@ -564,78 +661,6 @@ export default function AllProductsPage() {
                     })}
               </div>
             </motion.div>
-
-            {/* Price Range Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="bg-white rounded-xl lg:rounded-2xl border border-gray-200/60 shadow-sm p-4 sm:p-6"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <h3 className="text-lg font-bold text-black italic uppercase">
-                  Price Range
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Min Price
-                    </label>
-                    <input
-                      type="number"
-                      value={priceRange[0]}
-                      onChange={(e) =>
-                        setPriceRange([
-                          Number.parseInt(e.target.value) || 0,
-                          priceRange[1],
-                        ])
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/20 focus:border-black transition-all"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Max Price
-                    </label>
-                    <input
-                      type="number"
-                      value={priceRange[1]}
-                      onChange={(e) =>
-                        setPriceRange([
-                          priceRange[0],
-                          Number.parseInt(e.target.value) || 1000,
-                        ])
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black/20 focus:border-black transition-all"
-                      placeholder="1000"
-                    />
-                  </div>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() =>
-                    fetchProductsByCategory(
-                      selectedCategory,
-                      selectedSubcategory,
-                      selectedSubSubcategory,
-                      currentPage,
-                      sortBy, // assuming from your state
-                      inStock, // assuming from your state
-                      priceRange // now passed in!
-                    )
-                  }
-                  className="w-full bg-black text-white py-2 px-4 rounded-lg font-medium hover:shadow-lg transition-all"
-                >
-                  Apply Filter
-                </motion.button>
-              </div>
-            </motion.div>
           </motion.aside>
 
           {/* Main Content */}
@@ -653,7 +678,7 @@ export default function AllProductsPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 pr-8 focus:ring-2 focus:ring-[#A00300]/20 focus:border-[#A00300] transition-all font-medium text-sm sm:text-base"
+                    className="w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg sm:rounded-xl px-3 sm:px-8 py-2 sm:py-3 pr-8 focus:ring-2 focus:ring-[#A00300]/20 focus:border-[#A00300] transition-all font-medium text-sm sm:text-base"
                   >
                     {sortOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -663,33 +688,6 @@ export default function AllProductsPage() {
                   </select>
                   <ChevronDown className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-400 pointer-events-none" />
                 </div>
-
-                {/* <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-xl p-1">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setViewMode("grid")}
-                    className={`p-2 rounded-lg transition-all ${
-                      viewMode === "grid"
-                        ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 rounded-lg transition-all ${
-                      viewMode === "list"
-                        ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <List className="w-4 h-4" />
-                  </motion.button>
-                </div> */}
               </div>
 
               {/* Pagination */}
@@ -750,7 +748,31 @@ export default function AllProductsPage() {
             </div>
 
             {/* Products Grid */}
-            {products.length > 0 ? (
+            {isLoading ? (
+              // 🧼 skeleton loader
+              <div
+                className={`grid gap-4 sm:gap-6 ${
+                  viewMode === "grid"
+                    ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    : "grid-cols-1"
+                }`}
+              >
+                {[...Array(8)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="rounded-3xl bg-white overflow-hidden"
+                  >
+                    <div className="relative w-full h-40 md:h-56 rounded-2xl overflow-hidden mb-3 md:mb-4 bg-gray-200 animate-pulse"></div>
+                    <div className="p-5">
+                      <div className="h-4 w-3/4 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                      <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-6 w-1/3 bg-gray-200 rounded mt-3 animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length > 0 ? (
+              // ✅ show actual product grid
               <motion.div
                 variants={containerVariants}
                 initial="hidden"
@@ -833,34 +855,12 @@ export default function AllProductsPage() {
                   </motion.div>
                 ))}
               </motion.div>
-            ) : isLoading ? (
-              // Skeleton loading state
-              <div
-                className={`grid gap-4 sm:gap-6 ${
-                  viewMode === "grid"
-                    ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                    : "grid-cols-1"
-                }`}
-              >
-                {[...Array(8)].map((_, index) => (
-                  <div
-                    key={index}
-                    className="rounded-3xl bg-white overflow-hidden"
-                  >
-                    <div className="relative w-full h-40 md:h-56 rounded-2xl overflow-hidden mb-3 md:mb-4 bg-gray-200 animate-pulse"></div>
-                    <div className="p-5">
-                      <div className="h-4 w-3/4 bg-gray-200 rounded mb-2 animate-pulse"></div>
-                      <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-6 w-1/3 bg-gray-200 rounded mt-3 animate-pulse"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            ) : hasLoadedOnce ? (
+              // ❌ Show "No products" only AFTER first fetch
               <div className="text-center text-gray-500 p-6 sm:p-10">
                 No products found!
               </div>
-            )}
+            ) : null}
           </motion.main>
         </div>
       </div>

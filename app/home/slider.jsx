@@ -14,6 +14,13 @@ export function ImagesSliderDemo() {
   const hasFetched = useRef(false);
   const baseUrl = "https://marketplace.yuukke.com/assets/uploads/";
 
+  const staticMobileLinks = [
+    "https://marketplace.yuukke.com/shop/deal",
+    "https://marketplace.yuukke.com/seller/olitia-foods-pvt-ltd",
+    "https://marketplace.yuukke.com/seller/ojaswi-arts",
+    "https://marketplace.yuukke.com/seller/apaar-kala-92736",
+  ];
+
   // Immediately fetch images on mount
   useEffect(() => {
     if (hasFetched.current) return;
@@ -29,9 +36,11 @@ export function ImagesSliderDemo() {
 
         const data = await res.json();
 
-        const formatted = Object.values(data).map((item) => ({
+        const formatted = Object.values(data).map((item, index) => ({
           src: `${baseUrl}${item.image}`,
-          href: item.link || "#",
+          href: isMobile
+            ? staticMobileLinks[index] || "#" // 🪄 fallback to '#' if index overflows
+            : item.link || "#",
           title: item.title || "",
         }));
 

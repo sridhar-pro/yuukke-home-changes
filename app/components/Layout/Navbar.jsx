@@ -85,7 +85,7 @@ export default function Navbar() {
         }
 
         if (attempt === 5) {
-          localStorage.removeItem("authToken"); // force refresh if token exists but is trash
+          localStorage.removeItem("authToken"); // nuke the junk token
         }
 
         await wait(delay);
@@ -125,6 +125,20 @@ export default function Navbar() {
     };
 
     const fetchCategories = async () => {
+      // Check for cached categories first
+      const cached = localStorage.getItem("cachedCategories");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setProductCategories(parsed);
+          console.log("✅ Loaded categories from cache");
+          return; // Skip API call
+        } catch (err) {
+          console.warn("⚠️ Couldn't parse cached categories. Fetching fresh.");
+        }
+      }
+
+      // If not cached or bad cache, fetch fresh
       try {
         const data = await fetchWithAuth("/api/homeCategory");
         if (!data) return;
@@ -137,6 +151,8 @@ export default function Navbar() {
         }));
 
         setProductCategories(mapped);
+        localStorage.setItem("cachedCategories", JSON.stringify(mapped));
+        console.log("🆕 Categories fetched & cached");
       } catch (error) {
         console.error("❌ Error processing categories:", error);
       }
