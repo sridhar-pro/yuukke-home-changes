@@ -1,169 +1,71 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Globe } from "lucide-react";
-
-const langMap = {
-  en: "EN",
-  hi: "HI",
-  ta: "TA",
-  gu: "GU",
-  te: "TE",
-};
+import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { Globe } from "lucide-react"; // or use any other icon lib
 
 const LanguageSwitcher = () => {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [currentLang, setCurrentLang] = useState("EN"); // Default to English
+  const { i18n } = useTranslation();
+  const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // 🧠 Detect clicks outside
+  const languageOptions = [
+    { code: "en", label: "English - EN" },
+    { code: "hi", label: "हिंदी - HI" },
+    { code: "ta", label: "தமிழ் - TA" },
+    { code: "gu", label: "ગુજરાતી - GU" },
+    { code: "te", label: "తెలుగు - TE" },
+  ];
+
+  const toggleDropdown = () => setOpen((prev) => !prev);
+
+  const changeLang = (lang) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem("i18nextLng", lang);
+    setOpen(false); // Close dropdown after selection
+  };
+
+  // Close dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🌐 Inject Google Translate script
-  useEffect(() => {
-    const addGoogleTranslateScript = () => {
-      if (window.google?.translate?.TranslateElement) return;
-
-      const script = document.createElement("script");
-      script.src =
-        "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-      document.body.appendChild(script);
-
-      window.googleTranslateElementInit = () => {
-        new window.google.translate.TranslateElement(
-          {
-            pageLanguage: "en",
-            includedLanguages: "en,hi,ta,gu,te",
-            layout:
-              window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-            autoDisplay: false,
-          },
-          "google_translate_element"
-        );
-      };
-    };
-
-    addGoogleTranslateScript();
-  }, []);
-
-  // 📡 Get current language from cookie
-  useEffect(() => {
-    const match = document.cookie.match(/googtrans=\/en\/(\w{2})/);
-    const langCode = match?.[1]?.toLowerCase() || "en";
-    setCurrentLang(langMap[langCode] || "EN");
-  }, []);
-
-  // 🈂️ Switch language
-  const handleTranslate = (lang) => {
-    const setGoogleTransCookie = (langCode) => {
-      const cookieValue = langCode ? `/en/${langCode}` : "";
-      const expire = langCode ? "" : "expires=Thu, 01 Jan 1970 00:00:00 UTC; "; // Clear if lang = en
-
-      // 👇 Only add secure if current protocol is HTTPS
-      const isSecure = window.location.protocol === "https:" ? "Secure;" : "";
-
-      try {
-        document.cookie = `googtrans=${cookieValue}; ${expire}path=/; ${isSecure} SameSite=Lax`;
-      } catch (err) {
-        console.warn("Failed to set googtrans cookie:", err);
-      }
-    };
-
-    if (lang === "en") {
-      setGoogleTransCookie(""); // Clear cookie
-      location.reload();
-      return;
-    }
-
-    setGoogleTransCookie(lang);
-
-    const applyTranslation = () => {
-      const googleFrame = document.querySelector("iframe.goog-te-menu-frame");
-      if (!googleFrame) {
-        location.reload(); // Fallback if iframe not available
-        return;
-      }
-
-      const innerDoc =
-        googleFrame.contentDocument || googleFrame.contentWindow.document;
-      const spanTags = innerDoc.querySelectorAll(
-        ".goog-te-menu2-item span.text"
-      );
-
-      let clicked = false;
-      spanTags.forEach((el) => {
-        if (el.innerHTML.toLowerCase().includes(lang) && !clicked) {
-          el.click();
-          clicked = true;
-        }
-      });
-
-      if (!clicked) location.reload();
-    };
-
-    setTimeout(applyTranslation, 500);
-  };
+  const currentLangCode = i18n.language.toUpperCase();
 
   return (
-    <div
-      className="relative inline-block text-left"
-      translate="no"
-      ref={dropdownRef}
-    >
-      {/* 🌐 Language Switcher Button with Prefix */}
+    <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
-        className="flex items-center gap-1 p-2 hover:bg-gray-100 rounded-full transition notranslate"
-        title="Translate"
-        aria-label="Translate"
-        onClick={() => setShowDropdown((prev) => !prev)}
+        onClick={toggleDropdown}
+        className="flex items-center gap-1 px-3 py-2  text-sm font-medium text-gray-900 hover:bg-gray-50 rounded-md transition-all"
       >
-        <Globe className="w-5 h-5 text-gray-700" />
-        <span className="text-sm font-medium text-gray-700">{currentLang}</span>
+        <Globe className="w-4 h-4 text-gray-900" />
+        {currentLangCode}
       </button>
 
-      {/* Dropdown */}
-      {showDropdown && (
-        <div
-          className="absolute right-0 mt-2 w-44 bg-white shadow-md rounded-md z-50 notranslate"
-          translate="no"
-        >
-          {Object.entries(langMap).map(([code, label]) => (
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-50 py-2">
+          {languageOptions.map(({ code, label }) => (
             <button
               key={code}
-              onClick={() => {
-                handleTranslate(code);
-                setShowDropdown(false);
-              }}
-              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+              onClick={() => changeLang(code)}
+              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                i18n.language === code
+                  ? "font-semibold text-[#A00300]"
+                  : "text-gray-700"
+              }`}
             >
-              {`${labelMap(label)} - ${label}`}
+              {label}
             </button>
           ))}
         </div>
       )}
-
-      {/* Hidden mount point */}
-      <div id="google_translate_element" className="invisible absolute" />
     </div>
   );
 };
-
-// 🏷️ Optional: Make the labels a little prettier (fallback if needed)
-const labelMap = (code) =>
-  ({
-    EN: "English",
-    HI: "हिंदी",
-    TA: "தமிழ்",
-    GU: "ગુજરાતી",
-    TE: "తెలుగు",
-  }[code]);
 
 export default LanguageSwitcher;

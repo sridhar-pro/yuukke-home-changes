@@ -7,8 +7,11 @@ import Image from "next/image";
 import { FlipWords } from "../components/ui/flip-words";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const CategoriesSection = () => {
+  const { t } = useTranslation();
+
   const [categories, setCategories] = useState([]);
   const controls = useAnimation();
   const sliderRef = useRef(null);
@@ -122,7 +125,7 @@ const CategoriesSection = () => {
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-[var(--primary-color)]" />
             <span className="text-xs font-medium text-[var(--primary-color)] tracking-widest uppercase">
-              Shop by Category
+              {t("Shop by Category")}
             </span>
           </div>
           <div className="text-3xl sm:text-4xl font-medium text-neutral-800">

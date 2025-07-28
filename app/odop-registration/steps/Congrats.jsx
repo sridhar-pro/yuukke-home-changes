@@ -113,7 +113,7 @@ const Congratulations = () => {
             return;
           }
 
-          const dashboardUrl = `https://marketplace.betalearnings.com/Oauth/tLogin/${token}`;
+          const dashboardUrl = `https://marketplace.betalearnings.com/Oauth/ne_r_login/${token}`;
           window.location.href = dashboardUrl;
         }}
       >

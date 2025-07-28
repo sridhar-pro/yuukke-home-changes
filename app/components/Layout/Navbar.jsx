@@ -11,6 +11,7 @@ import { User, Heart, ShoppingCart } from "lucide-react";
 import CartSidebar from "../CartSideBar";
 import { useAuth } from "@/app/utils/AuthContext";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 const messages = [
   "Yuukke Anniversary Sale – Enjoy 30% OFF Sitewide • Handcrafted • Eco‑Friendly • Gift‑Ready • Limited Time Only – Shop Now!",
@@ -18,6 +19,8 @@ const messages = [
 ];
 
 export default function Navbar() {
+  const { t } = useTranslation();
+
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -237,7 +240,7 @@ export default function Navbar() {
                   href="/products"
                   className="group transition-all flex items-center gap-1 py-2 px-1 font-medium text-gray-700 hover:text-gray-900 cursor-pointer"
                 >
-                  Products
+                  {t("Products")}
                   <ChevronDown className="w-4 h-4 mt-0.5 transition-transform duration-200 group-hover:rotate-180" />
                 </Link>
 
@@ -275,7 +278,7 @@ export default function Navbar() {
                   href="#"
                   className="transition-all flex items-center gap-1 py-2 px-1 font-medium text-gray-700 hover:text-gray-900"
                 >
-                  ODOP
+                  {t("ODOP")}
                   <ChevronDown className="w-4 h-4 mt-0.5 transition-transform duration-200 group-hover:rotate-180" />
                 </Link>
                 <div className="absolute left-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-out px-4 py-3 w-56">
@@ -283,7 +286,7 @@ export default function Navbar() {
                     href="https://marketplace.yuukke.com/odop/uttar-pradesh"
                     className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-sm rounded-lg transition-all duration-200 flex items-center gap-2"
                   >
-                    Uttar Pradesh
+                    {t("Uttar Pradesh")}
                   </a>
                   {/* <a
                     href="/odop-registration"
@@ -303,7 +306,7 @@ export default function Navbar() {
                     href="/odop-registration"
                     className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-sm rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
                   >
-                    ODOP Registration
+                    {t("ODOP Registration")}
                   </Link>
                 </div>
               </div>
@@ -313,7 +316,7 @@ export default function Navbar() {
                 href="https://marketplace.yuukke.com/shop/deal"
                 className="transition-all py-2 px-1 font-medium text-gray-700 hover:text-gray-900"
               >
-                Offers
+                {t("Offers")}
               </Link>
 
               {/* Gifts Link */}
@@ -321,7 +324,7 @@ export default function Navbar() {
                 href="https://gift.yuukke.com/"
                 className="transition-all py-2 px-1 font-medium text-gray-700 hover:text-gray-900"
               >
-                Gifts
+                {t("Gifts")}
               </Link>
             </div>
           </div>
@@ -446,7 +449,8 @@ export default function Navbar() {
                 onClick={() => setIsProductsOpen(!isProductsOpen)}
                 className="w-full text-left hover:text-black transition"
               >
-                Products {isProductsOpen ? "▲" : "▼"}
+                {t("Products")}
+                {isProductsOpen ? "▲" : "▼"}
               </button>
               {isProductsOpen && (
                 <div className="ml-4 mt-2 space-y-0 text-gray-600">
@@ -468,7 +472,8 @@ export default function Navbar() {
                 onClick={() => setIsOdopOpen(!isOdopOpen)}
                 className="w-full text-left hover:text-black transition"
               >
-                ODOP {isOdopOpen ? "▲" : "▼"}
+                {t("ODOP")}
+                {isOdopOpen ? "▲" : "▼"}
               </button>
               {isOdopOpen && (
                 <div className="ml-4 mt-2 space-y-1 text-gray-600">
@@ -476,7 +481,7 @@ export default function Navbar() {
                     href="https://marketplace.yuukke.com/odop/uttar-pradesh"
                     className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-md rounded"
                   >
-                    Uttar Pradesh
+                    {t("ODOP Registration")}
                   </a>
                   {/* <a
                     href="/odop-registration"
@@ -496,7 +501,7 @@ export default function Navbar() {
                     href="/odop-registration"
                     className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-md rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
                   >
-                    ODOP Registration
+                    {t("Uttar Pradesh")}
                   </Link>
                 </div>
               )}
@@ -506,14 +511,14 @@ export default function Navbar() {
               href="https://marketplace.yuukke.com/shop/deal"
               className="block py-1 hover:text-black transition"
             >
-              Offers
+              {t("Offers")}
             </a>
 
             <Link
               href="https://gift.yuukke.com/"
               className="block py-1 hover:text-black transition"
             >
-              Gifts
+              {t("Gifts")}
             </Link>
           </div>
         )}
