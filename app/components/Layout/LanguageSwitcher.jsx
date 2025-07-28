@@ -63,21 +63,32 @@ const LanguageSwitcher = () => {
 
   // 🈂️ Switch language
   const handleTranslate = (lang) => {
+    const setGoogleTransCookie = (langCode) => {
+      const cookieValue = langCode ? `/en/${langCode}` : "";
+      const expire = langCode ? "" : "expires=Thu, 01 Jan 1970 00:00:00 UTC; "; // Clear if lang = en
+
+      // 👇 Only add secure if current protocol is HTTPS
+      const isSecure = window.location.protocol === "https:" ? "Secure;" : "";
+
+      try {
+        document.cookie = `googtrans=${cookieValue}; ${expire}path=/; ${isSecure} SameSite=Lax`;
+      } catch (err) {
+        console.warn("Failed to set googtrans cookie:", err);
+      }
+    };
+
     if (lang === "en") {
-      document.cookie =
-        "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      location.reload(); // Clear translation
+      setGoogleTransCookie(""); // Clear cookie
+      location.reload();
       return;
     }
 
-    // Set cookie safely
-    document.cookie = `googtrans=/en/${lang}; path=/; secure`;
+    setGoogleTransCookie(lang);
 
     const applyTranslation = () => {
       const googleFrame = document.querySelector("iframe.goog-te-menu-frame");
       if (!googleFrame) {
-        // Fallback: set cookie and reload
-        location.reload();
+        location.reload(); // Fallback if iframe not available
         return;
       }
 
@@ -95,12 +106,9 @@ const LanguageSwitcher = () => {
         }
       });
 
-      if (!clicked) {
-        location.reload();
-      }
+      if (!clicked) location.reload();
     };
 
-    // Try clicking the translation
     setTimeout(applyTranslation, 500);
   };
 
