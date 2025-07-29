@@ -4,6 +4,7 @@ import { X, IndianRupee, Plus, Minus, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Link from "next/link";
 
 const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
   // Format price to show 2 decimal places
@@ -506,14 +507,29 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
                   Shipping and taxes calculated at checkout
                 </div>
                 <div className="flex justify-end">
-                  <motion.button
+                  {/* <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     className="w-1/2 bg-red-500 text-sm text-white py-3 mb-8 md:mb-0 rounded-lg hover:bg-gray-800 transition flex items-center justify-center"
                     onClick={handleCheckout}
                   >
                     Proceed to Checkout
-                  </motion.button>
+                  </motion.button> */}
+                  <div
+                    onClick={() => {
+                      onClose?.(); // ✅ close the cart
+                    }}
+                  >
+                    <Link href="/checkout">
+                      <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full bg-red-500 text-sm text-white py-3 px-3 mb-8 md:mb-0 rounded-lg hover:bg-gray-800 transition flex items-center justify-center"
+                      >
+                        Proceed to Checkout
+                      </motion.button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

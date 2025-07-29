@@ -10,14 +10,24 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Heart,
   IndianRupee,
+  PackageCheck,
+  Wallet,
+  SlidersHorizontal,
+  Filter,
+  X,
+  Circle,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function AllProductsPage() {
+  const productCache = useRef({});
   const searchParams = useSearchParams();
   const categorySlugFromQuery = searchParams.get("category");
 
@@ -55,6 +65,23 @@ export default function AllProductsPage() {
     { value: "1plth", label: "Price: Low to High" },
     { value: "1phtl", label: "Price: High to Low" },
   ];
+
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selected =
+    sortOptions.find((opt) => opt.value === sortBy)?.label || "Sort by";
 
   useEffect(() => {
     if (!categorySlugFromQuery || categories.length === 0) return;
@@ -157,14 +184,36 @@ export default function AllProductsPage() {
     sortValue = "1nto",
     inStockValue = false,
     priceRange = [1, 100000],
-    retry = false // 🔁 Track if this is a retry
+    retry = false
   ) => {
     const token = localStorage.getItem("authToken");
     console.time("🛒 fetchProducts");
     setIsLoading(true);
-    setHasLoadedOnce(false); // optional: reset if needed
+    setHasLoadedOnce(false);
 
     const isValidId = (val) => val !== null && val !== undefined;
+
+    const cacheKey = JSON.stringify({
+      categoryId,
+      subcategoryId,
+      subSubcategoryId,
+      page,
+      sortValue,
+      inStockValue,
+      priceRange,
+    });
+
+    // 🧠 1. Check in-memory cache first
+    if (productCache.current[cacheKey]) {
+      console.log("⚡️Using cached data for:", cacheKey);
+      const cached = productCache.current[cacheKey];
+      setProducts(cached.products);
+      setTotalPages(cached.totalPages);
+      setHasLoadedOnce(true);
+      setIsLoading(false);
+      console.timeEnd("🛒 fetchProducts");
+      return;
+    }
 
     const body = {
       filters: {
@@ -209,7 +258,7 @@ export default function AllProductsPage() {
           sortValue,
           inStockValue,
           priceRange,
-          true // 🔁 Retry now
+          true // retry = true
         );
       }
 
@@ -217,19 +266,24 @@ export default function AllProductsPage() {
 
       const data = await res.json();
 
-      console.log("✅ Products fetched for:", {
+      console.log("✅ Products fetched from API for:", {
         categoryId,
         subcategoryId,
         subSubcategoryId,
       });
-      console.log("📦 Products response:", data);
 
       setProducts(data?.products || []);
       setTotalPages(data?.info?.total_page || 1);
-      setHasLoadedOnce(true); // ✅ Set true only after success
+      setHasLoadedOnce(true);
+
+      // 💾 2. Save to memory cache
+      productCache.current[cacheKey] = {
+        products: data?.products || [],
+        totalPages: data?.info?.total_page || 1,
+      };
     } catch (err) {
       console.error("❌ Fetching products failed:", err);
-      setHasLoadedOnce(true); // ✅ Even on error, set true to prevent blink
+      setHasLoadedOnce(true);
     } finally {
       setIsLoading(false);
       console.timeEnd("🛒 fetchProducts");
@@ -239,8 +293,7 @@ export default function AllProductsPage() {
   useEffect(() => {
     if (!isAuthReady || categories.length === 0) return;
 
-    // 👉 If category is selected (via slug or user click), fetch filtered
-    if (selectedCategory !== null) {
+    const timeout = setTimeout(() => {
       fetchProductsByCategory(
         selectedCategory,
         selectedSubcategory,
@@ -249,10 +302,9 @@ export default function AllProductsPage() {
         sortBy,
         inStock
       );
-    } else {
-      // 👉 Else fetch all products without filters
-      fetchProductsByCategory(null, null, null, currentPage, sortBy, inStock);
-    }
+    }, 300); // Wait for 300ms of silence before firing
+
+    return () => clearTimeout(timeout);
   }, [
     selectedCategory,
     selectedSubcategory,
@@ -264,6 +316,11 @@ export default function AllProductsPage() {
     categories,
   ]);
 
+  const getCategoryName = (id) => {
+    const category = categories.find((cat) => cat.id === id);
+    return category?.name || "Unknown";
+  };
+
   return (
     <div className="min-h-screen">
       <div className="px-4 sm:px-6 py-6 sm:py-8">
@@ -273,97 +330,120 @@ export default function AllProductsPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full lg:w-80 space-y-6"
+            className="w-full lg:w-80"
           >
-            {/* Availability Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white rounded-xl lg:rounded-2xl border border-gray-200/60 shadow-sm p-4 sm:p-6"
+              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 space-y-6"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <h3 className="text-lg font-bold text-black uppercase">
-                  Availability
-                </h3>
-              </div>
+              {/* Clear Filters Header */}
+              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+                <div className="flex items-center gap-2 text-gray-800 font-semibold text-sm">
+                  <Filter className="w-4 h-4 text-gray-500" />
+                  <span>Filters</span>
 
-              <motion.label
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 transition-all"
-              >
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={inStock}
-                    onChange={(e) => setInStock(e.target.checked)}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`w-5 h-5 rounded-md border-2 transition-all duration-300 ${
-                      inStock
-                        ? "bg-black border-black"
-                        : "border-gray-300 hover:border-black"
-                    }`}
-                  >
-                    {inStock && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="w-full h-full flex items-center justify-center"
-                      >
-                        <div className="w-2 h-2 bg-white rounded-sm" />
-                      </motion.div>
-                    )}
-                  </div>
+                  {/* Selected Category Badge */}
+                  {(selectedCategory ||
+                    selectedSubcategory ||
+                    selectedSubSubcategory) && (
+                    <div className="flex items-center gap-1 ml-2">
+                      {selectedCategory && (
+                        <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-medium truncate max-w-[10rem]">
+                          {getCategoryName(selectedCategory)}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <span className="font-medium text-gray-700">In Stock Only</span>
-              </motion.label>
-            </motion.div>
 
-            {/* Price Range Section */}
-            {/* Price Range Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
-            >
-              {/* Header */}
-              <div className="mb-5">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+                {/* Clear Button */}
+                {(selectedCategory ||
+                  selectedSubcategory ||
+                  selectedSubSubcategory ||
+                  inStock ||
+                  priceRange !== 100000) && (
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setSelectedSubcategory(null);
+                      setSelectedSubSubcategory(null);
+                      setInStock(false);
+                      setPriceRange(0);
+                      fetchProductsByCategory(null, null, null);
+                    }}
+                    className="text-gray-400 hover:text-black transition-colors p-1"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Price Filter
-                </h3>
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
-              <div className="space-y-5">
-                {/* Slider with min/max labels */}
-                <div>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1 px-1">
-                    <span>₹0</span>
-                    <span>₹10,000</span>
+              {/* Availability */}
+              <div className="space-y-3 border- border-gray-200 b pb-4">
+                <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+                  <PackageCheck className="w-4 h-4 text-gray-500" />
+                  Availability
+                </div>
+
+                <motion.label
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center justify-between cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all px-3 py-2 rounded-lg border border-gray-200"
+                >
+                  <span className="text-sm font-medium text-gray-800">
+                    In Stock Only
+                  </span>
+
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={inStock}
+                      onChange={(e) => setInStock(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-10 h-6 flex items-center bg-gray-300 rounded-full p-1 transition-all ${
+                        inStock ? "bg-emerald-500" : ""
+                      }`}
+                    >
+                      <div
+                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${
+                          inStock ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </div>
                   </div>
+                </motion.label>
+              </div>
+
+              {/* Price Filter */}
+              <div className="space-y-4 border-b border-gray-200  pb-4">
+                <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+                  <Wallet className="w-4 h-4 text-gray-500" />
+                  Price Filter
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-gray-600 font-medium font-mono">
+                    <span className="flex items-center gap-1">
+                      <IndianRupee className="w-3.5 h-3.5 text-gray-500" />0
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <IndianRupee className="w-3.5 h-3.5 text-gray-500" />
+                      1,00,000
+                    </span>
+                  </div>
+
                   <input
                     type="range"
                     min="0"
-                    max="10000"
+                    max="100000"
                     step="100"
                     value={priceRange}
                     onChange={(e) => setPriceRange(Number(e.target.value))}
-                    className="w-full h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer 
+                    className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer 
           [&::-webkit-slider-thumb]:appearance-none
           [&::-webkit-slider-thumb]:h-4
           [&::-webkit-slider-thumb]:w-4
@@ -371,21 +451,17 @@ export default function AllProductsPage() {
           [&::-webkit-slider-thumb]:bg-black
           [&::-webkit-slider-thumb]:border-2
           [&::-webkit-slider-thumb]:border-white
-          [&::-webkit-slider-thumb]:shadow-sm
+          [&::-webkit-slider-thumb]:shadow-md
           [&::-webkit-slider-thumb]:cursor-pointer"
                   />
                 </div>
 
-                {/* Combined button with price */}
                 <motion.button
                   whileHover={{
-                    scale: 1.02,
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                    scale: 1.01,
+                    boxShadow: "0 3px 10px rgba(0,0,0,0.04)",
                   }}
-                  whileTap={{
-                    scale: 0.98,
-                    boxShadow: "none",
-                  }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() =>
                     fetchProductsByCategory(
                       selectedCategory,
@@ -397,87 +473,56 @@ export default function AllProductsPage() {
                       [0, priceRange]
                     )
                   }
-                  className="w-full bg-black text-white py-2.5 px-4 rounded-lg font-medium 
-        hover:shadow-sm transition-all flex items-center justify-between"
+                  className="w-full bg-white text-gray-800 py-2 px-3 rounded-md font-medium border border-gray-200 
+        hover:bg-gray-50 transition-all text-sm flex items-center justify-between"
                 >
-                  <span className="flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Apply Filter
+                  <span className="flex items-center gap-1 text-sm">
+                    <SlidersHorizontal className="w-4 h-4 text-gray-600" />
+                    Apply
                   </span>
-                  <span className="flex items-center bg-gray-800 rounded-md px-2 py-1 text-sm">
-                    <IndianRupee className="w-3 h-3 mr-0.5" />
+
+                  <span className="flex items-center gap-1 bg-gray-100 text-gray-600 rounded px-2 py-1 text-xs shadow-inner">
+                    <IndianRupee className="w-3 h-3" />
                     {priceRange.toLocaleString()}
                   </span>
                 </motion.button>
               </div>
-            </motion.div>
 
-            {/* Categories Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white rounded-xl lg:rounded-2xl border border-gray-200/60 shadow-sm p-4 sm:p-6"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <h3 className="text-lg font-bold text-black uppercase">
-                  Categories
-                </h3>
-              </div>
+              {/* Categories Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="p-4 sm:p-2"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <h3 className="text-lg font-bold text-black uppercase tracking-wide">
+                    Categories
+                  </h3>
+                </div>
 
-              <div className="space-y-3">
-                {loadingCategories
-                  ? [...Array(6)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="h-14 rounded-xl bg-gray-100 animate-pulse border border-gray-200"
-                      />
-                    ))
-                  : categories.map((cat, index) => {
-                      const isSelected = selectedCategory === cat.id;
-                      return (
-                        <motion.div
-                          key={cat.id}
-                          layout
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          transition={{ duration: 0.4, delay: index * 0.1 }}
-                          className="group relative"
-                        >
-                          <div
-                            className={`relative bg-gray-50 rounded-xl border overflow-hidden transition-all duration-300 ${
-                              isSelected
-                                ? "border-black/30 shadow-lg shadow-black/10 ring-1 ring-black/20"
-                                : "border-gray-200/60 hover:shadow-md hover:border-gray-300/60"
-                            }`}
+                <div className="space-y-3">
+                  {loadingCategories
+                    ? [...Array(6)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-5 w-2/3 rounded bg-gray-200 animate-pulse"
+                        />
+                      ))
+                    : categories.map((cat, index) => {
+                        const isSelected = selectedCategory === cat.id;
+                        return (
+                          <motion.div
+                            key={cat.id}
+                            layout
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ duration: 0.4, delay: index * 0.05 }}
                           >
-                            {isSelected && (
-                              <motion.div
-                                layoutId="selectedBg"
-                                className="absolute inset-0 bg-black/5"
-                                transition={{
-                                  type: "spring",
-                                  bounce: 0.2,
-                                  duration: 0.6,
-                                }}
-                              />
-                            )}
-
                             <motion.button
-                              whileHover={{ scale: 1.01 }}
-                              whileTap={{ scale: 0.99 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                               onClick={() => {
                                 const isCatSelected =
                                   selectedCategory === cat.id;
@@ -492,174 +537,96 @@ export default function AllProductsPage() {
                                   null
                                 );
                               }}
-                              className={`relative w-full flex items-center justify-between px-4 py-3 text-sm font-semibold transition-all duration-300 ${
+                              className={`flex items-center justify-between w-full px-1 py-1 text-sm font-medium transition-colors duration-300 group ${
                                 isSelected
-                                  ? "text-black"
-                                  : "text-gray-700 hover:text-black"
+                                  ? "text-black font-semibold"
+                                  : "text-gray-600 hover:text-black"
                               }`}
                             >
-                              <div className="flex items-center gap-3">
-                                <motion.div
-                                  animate={{
-                                    scale: isSelected ? 1.2 : 1,
-                                    rotate: isSelected ? 360 : 0,
-                                  }}
-                                  transition={{ duration: 0.3 }}
-                                  className={`w-2 h-2 rounded-full ${
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
                                     isSelected
                                       ? "bg-black"
                                       : "bg-gray-400 group-hover:bg-black"
                                   }`}
                                 />
                                 <span>{cat.name}</span>
-                                {isSelected && (
-                                  <motion.div
-                                    initial={{ scale: 0, rotate: -180 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                  ></motion.div>
-                                )}
                               </div>
-                              <motion.div
-                                animate={{ rotate: isSelected ? 180 : 0 }}
-                                transition={{ duration: 0.3 }}
-                              >
+                              {cat.subcategories?.length > 0 && (
                                 <ChevronDown
-                                  className={`w-4 h-4 ${
-                                    isSelected ? "text-black" : "text-gray-400"
+                                  className={`w-4 h-4 transition-transform ${
+                                    isSelected
+                                      ? "rotate-180 text-black"
+                                      : "text-gray-400"
                                   }`}
                                 />
-                              </motion.div>
+                              )}
                             </motion.button>
 
                             <AnimatePresence>
                               {isSelected && cat.subcategories?.length > 0 && (
                                 <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: "auto", opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{
-                                    duration: 0.4,
-                                    ease: "easeInOut",
-                                  }}
-                                  className="px-4 pb-3"
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="ml-4 mt-1 space-y-3"
                                 >
-                                  <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-3" />
-                                  <ul className="space-y-1">
-                                    {cat.subcategories.map((sub, subIndex) => {
-                                      const isSubSelected =
-                                        selectedSubcategory === sub.id;
-                                      return (
-                                        <motion.li
-                                          key={sub.id}
-                                          initial={{ opacity: 0, x: -10 }}
-                                          animate={{ opacity: 1, x: 0 }}
-                                          transition={{
-                                            delay: subIndex * 0.05,
-                                          }}
-                                          className="relative"
-                                        >
-                                          <motion.button
-                                            whileHover={{ x: 4, scale: 1.01 }}
-                                            whileTap={{ scale: 0.99 }}
-                                            onClick={() => {
-                                              const isSubSelected =
-                                                selectedSubcategory === sub.id;
-                                              setSelectedSubcategory(
-                                                isSubSelected ? null : sub.id
-                                              );
-                                              setSelectedSubSubcategory(null);
-                                              fetchProductsByCategory(
-                                                selectedCategory,
-                                                isSubSelected ? null : sub.id,
-                                                null
-                                              );
-                                            }}
-                                            className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
+                                  {cat.subcategories.map((sub, subIndex) => {
+                                    const isSubSelected =
+                                      selectedSubcategory === sub.id;
+                                    return (
+                                      <motion.button
+                                        key={sub.id}
+                                        initial={{ opacity: 0, x: -5 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: subIndex * 0.03 }}
+                                        onClick={() => {
+                                          const isSubSelected =
+                                            selectedSubcategory === sub.id;
+                                          setSelectedSubcategory(
+                                            isSubSelected ? null : sub.id
+                                          );
+                                          setSelectedSubSubcategory(null);
+                                          fetchProductsByCategory(
+                                            selectedCategory,
+                                            isSubSelected ? null : sub.id,
+                                            null
+                                          );
+                                        }}
+                                        className={`flex items-center gap-2 w-full text-left text-sm transition-colors duration-200 ${
+                                          isSubSelected
+                                            ? "text-black font-medium"
+                                            : "text-gray-500 hover:text-black"
+                                        }`}
+                                      >
+                                        {isSubSelected ? (
+                                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                        ) : (
+                                          <Circle className="w-4 h-4 text-gray-300" />
+                                        )}
+                                        {sub.name}
+                                        {sub.sub_subcategories?.length > 0 && (
+                                          <ChevronDown
+                                            className={`w-3 h-3 ml-auto ${
                                               isSubSelected
-                                                ? "bg-black/10 text-black border border-black/20"
-                                                : "text-gray-600 hover:bg-white hover:text-black"
+                                                ? "rotate-180 text-black"
+                                                : "text-gray-400"
                                             }`}
-                                          >
-                                            <div className="flex justify-between items-center">
-                                              <div className="flex items-center gap-2">
-                                                <div
-                                                  className={`w-1.5 h-1.5 rounded-full ${
-                                                    isSubSelected
-                                                      ? "bg-black"
-                                                      : "bg-gray-400"
-                                                  }`}
-                                                />
-                                                <span>{sub.name}</span>
-                                              </div>
-                                              {sub.sub_subcategories?.length >
-                                                0 && (
-                                                <ChevronDown
-                                                  className={`w-3 h-3 transition-transform ${
-                                                    isSubSelected
-                                                      ? "rotate-180 text-black"
-                                                      : "text-gray-400"
-                                                  }`}
-                                                />
-                                              )}
-                                            </div>
-                                          </motion.button>
-
-                                          <AnimatePresence>
-                                            {isSubSelected &&
-                                              sub.sub_subcategories?.length >
-                                                0 && (
-                                                <motion.ul
-                                                  initial={{
-                                                    opacity: 0,
-                                                    scale: 0.95,
-                                                    y: -5,
-                                                  }}
-                                                  animate={{
-                                                    opacity: 1,
-                                                    scale: 1,
-                                                    y: 0,
-                                                  }}
-                                                  exit={{
-                                                    opacity: 0,
-                                                    scale: 0.95,
-                                                    y: -5,
-                                                  }}
-                                                  transition={{ duration: 0.2 }}
-                                                  className="absolute left-full top-0 ml-2 w-48 bg-white shadow-lg border border-gray-200 rounded-lg z-10"
-                                                >
-                                                  {sub.sub_subcategories.map(
-                                                    (ssub) => (
-                                                      <li key={ssub.id}>
-                                                        <button
-                                                          onClick={() =>
-                                                            console.log(
-                                                              "Sub-sub selected:",
-                                                              ssub.slug
-                                                            )
-                                                          }
-                                                          className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-black hover:bg-black/5"
-                                                        >
-                                                          • {ssub.name}
-                                                        </button>
-                                                      </li>
-                                                    )
-                                                  )}
-                                                </motion.ul>
-                                              )}
-                                          </AnimatePresence>
-                                        </motion.li>
-                                      );
-                                    })}
-                                  </ul>
+                                          />
+                                        )}
+                                      </motion.button>
+                                    );
+                                  })}
                                 </motion.div>
                               )}
                             </AnimatePresence>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-              </div>
+                          </motion.div>
+                        );
+                      })}
+                </div>
+              </motion.div>
             </motion.div>
           </motion.aside>
 
@@ -671,28 +638,57 @@ export default function AllProductsPage() {
             className="flex-1"
           >
             {/* Top Controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6 sm:mb-8">
               {/* Sort Dropdown */}
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <div className="relative flex-1 sm:flex-none">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full sm:w-auto appearance-none bg-white border border-gray-300 rounded-lg sm:rounded-xl px-3 sm:px-8 py-2 sm:py-3 pr-8 focus:ring-2 focus:ring-[#A00300]/20 focus:border-[#A00300] transition-all font-medium text-sm sm:text-base"
-                  >
+              <div className="relative w-full sm:w-52" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="w-full rounded-xl border border-gray-200 bg-white/90 backdrop-blur-md py-2 px-4 pr-10 text-left shadow-sm hover:shadow-md transition-all duration-200 ease-in-out focus:ring-1 focus:ring-[#A00300]/30 focus:border-[#A00300] text-xs sm:text-sm font-medium text-gray-800 flex items-center justify-between"
+                >
+                  {selected}
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isOpen && (
+                  <div className="absolute mt-1 w-full rounded-xl border border-gray-200 bg-white/95 backdrop-blur-md shadow-lg z-10 overflow-hidden animate-fade-in">
                     {sortOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
+                      <div
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value);
+                          setIsOpen(false);
+                        }}
+                        className={`cursor-pointer px-4 py-2 text-xs sm:text-sm transition-all duration-150 ${
+                          option.value === sortBy
+                            ? "bg-[#FFF0EE] text-[#A00300] font-semibold"
+                            : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
                         {option.label}
-                      </option>
+                      </div>
                     ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-400 pointer-events-none" />
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-center sm:justify-end gap-2 py-2 w-full sm:w-auto">
-                {/* Prev Button */}
+              <div className="flex items-center justify-center sm:justify-end gap-1.5 py-3 w-full sm:w-auto">
+                {/* First Page */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                >
+                  <ChevronsLeft className="w-4 h-4 text-gray-600" />
+                </motion.button>
+
+                {/* Prev */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -700,15 +696,15 @@ export default function AllProductsPage() {
                     setCurrentPage((prev) => Math.max(1, prev - 1))
                   }
                   disabled={currentPage === 1}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="p-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
                 </motion.button>
 
-                {/* Dynamic Page Numbers - max 4 at a time */}
+                {/* Pages */}
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(totalPages, 4) }, (_, i) => {
-                    let startPage = Math.max(
+                    const startPage = Math.max(
                       1,
                       Math.min(currentPage - 1, totalPages - 3)
                     );
@@ -720,10 +716,10 @@ export default function AllProductsPage() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setCurrentPage(pageNumber)}
-                        className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                        className={`w-8 h-8 rounded-lg text-xs font-medium transition-all duration-150 ${
                           currentPage === pageNumber
-                            ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white shadow-md"
-                            : "text-gray-700 bg-white border border-gray-200 hover:bg-gray-100"
+                            ? "bg-gradient-to-r from-[#A00300] to-[#D44A47] text-white shadow-sm"
+                            : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-100 shadow-sm"
                         }`}
                       >
                         {pageNumber}
@@ -732,7 +728,7 @@ export default function AllProductsPage() {
                   })}
                 </div>
 
-                {/* Next Button */}
+                {/* Next */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -740,9 +736,20 @@ export default function AllProductsPage() {
                     setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="p-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                </motion.button>
+
+                {/* Last Page */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                >
+                  <ChevronsRight className="w-4 h-4 text-gray-600" />
                 </motion.button>
               </div>
             </div>
@@ -814,41 +821,44 @@ export default function AllProductsPage() {
 
                       {/* Product Info */}
                       <div className="p-3 sm:p-5">
-                        <h3 className="text-xs sm:text-sm md:text-base font-semibold line-clamp-2 mb-1 capitalize">
+                        <h3
+                          className="text-xs sm:text-sm md:text-base font-semibold line-clamp-2 mb-1 capitalize"
+                          style={{ minHeight: "2.75rem" }} // ~2 lines of text height
+                        >
                           {product.name}
                         </h3>
 
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1 mt-1">
-                            {product.promo_price &&
-                            product.end_date &&
-                            new Date(product.end_date) > new Date() ? (
-                              <>
-                                <div className="flex items-baseline gap-1.5 md:gap-2 flex-wrap">
-                                  <p className="text-sm md:text-lg font-bold">
-                                    ₹{Number(product.promo_price).toFixed(2)}
-                                  </p>
-                                  <p className="text-xs md:text-sm text-gray-400 line-through">
-                                    ₹{Number(product.price).toFixed(2)}
-                                  </p>
-                                </div>
+                        <div className="flex items-center justify-between mt-1">
+                          {product.promo_price &&
+                          product.end_date &&
+                          new Date(product.end_date) > new Date() ? (
+                            <div className="flex items-center justify-between w-full">
+                              {/* Prices */}
+                              <div className="flex items-baseline gap-1.5 md:gap-2">
+                                <p className="text-sm md:text-lg font-bold">
+                                  ₹{Number(product.promo_price).toFixed(2)}
+                                </p>
+                                <p className="text-xs md:text-sm text-gray-400 line-through">
+                                  ₹{Number(product.price).toFixed(2)}
+                                </p>
+                              </div>
 
-                                <span className="block md:inline text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg md:ml-2">
-                                  {Math.round(
-                                    ((Number(product.price) -
-                                      Number(product.promo_price)) /
-                                      Number(product.price)) *
-                                      100
-                                  )}
-                                  % OFF
-                                </span>
-                              </>
-                            ) : (
-                              <p className="text-sm md:text-lg font-bold text-gray-900">
-                                ₹{Number(product.price).toFixed(2)}
-                              </p>
-                            )}
-                          </div>
+                              {/* OFF Tag */}
+                              <span className="text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg ml-2 whitespace-nowrap">
+                                {Math.round(
+                                  ((Number(product.price) -
+                                    Number(product.promo_price)) /
+                                    Number(product.price)) *
+                                    100
+                                )}
+                                % OFF
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="text-sm md:text-lg font-bold text-gray-900">
+                              ₹{Number(product.price).toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </Link>
