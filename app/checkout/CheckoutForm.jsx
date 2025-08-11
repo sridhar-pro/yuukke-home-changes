@@ -444,7 +444,12 @@ const CheckoutForm = ({
                         "cart_shipping_details",
                         shippingData
                       );
+                      setLocalStorageWithEvent(
+                        "order_success_details",
+                        shippingData
+                      );
                       console.log("📦 Shipping data saved:", shippingData);
+                      console.log("✅ Order success data saved:", shippingData);
                     } catch (err) {
                       console.error("🚨 Error fetching shipping data:", err);
                     }

@@ -145,7 +145,7 @@ export default function CheckoutPage({ formData }) {
 
   useEffect(() => {
     if (paymentSuccess) {
-      window.scrollTo({ top: 0, behavior: "smooth" }); // 🎯 scroll to top like a boss
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       const notifyBackend = async () => {
         const storedOrder = JSON.parse(localStorage.getItem("order_id_data"));
@@ -163,6 +163,21 @@ export default function CheckoutPage({ formData }) {
           );
           return;
         }
+
+        // Save order confirmation data before clearing
+        const shippingDetails = localStorage.getItem("cart_shipping_details");
+        const taxDetails = localStorage.getItem("cart_tax_details");
+        const orderConfirmation = {
+          orderDetails: shippingDetails ? JSON.parse(shippingDetails) : null,
+          taxDetails: taxDetails ? JSON.parse(taxDetails) : null,
+          orderId: idordered,
+          paymentId,
+          orderDate,
+        };
+        localStorage.setItem(
+          "order_confirmation",
+          JSON.stringify(orderConfirmation)
+        );
 
         const payload = {
           saleid,
@@ -186,25 +201,23 @@ export default function CheckoutPage({ formData }) {
           const data = await res.json();
           console.log("✅ Payment notification response:", data);
 
-          // 🧹 Clean up localStorage items after successful notification
-          localStorage.removeItem("cart_tax_details");
-          localStorage.removeItem("cart_data");
-          localStorage.removeItem("order_id_data");
-          // localStorage.removeItem("cart_shipping_details");
+          // Clear only the cart data, keep confirmation data
+          const keysToRemove = [
+            "cart_tax_details",
+            "cart_data",
+            "order_id_data",
+            "cart_shipping_details",
+          ];
+
+          keysToRemove.forEach((key) => localStorage.removeItem(key));
 
           window.dispatchEvent(
-            new CustomEvent("local-storage-update", {
-              detail: { key: "cart_shipping_details" },
+            new CustomEvent("cart-cleared", {
+              detail: { clearedKeys: keysToRemove },
             })
           );
 
-          window.dispatchEvent(
-            new CustomEvent("local-storage-update", {
-              detail: { key: "cart_tax_details" },
-            })
-          );
-
-          console.log("🧼 Local storage cleared after successful payment.");
+          console.log("🧼 Cart data cleared after successful payment.");
         } catch (err) {
           console.error("❌ Failed to send payment notification:", err);
         }
@@ -239,6 +252,30 @@ export default function CheckoutPage({ formData }) {
       window.removeEventListener("orderIdDataUpdated", handleOrderIdUpdate);
     };
   }, []);
+
+  {
+    /* Load order_success_details from localStorage */
+  }
+  // ✅ Get success data from localStorage
+  const orderSuccessData =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("order_success_details") || "{}")
+      : {};
+
+  // ✅ Convert contents object into array
+  const success_orderedItems = orderSuccessData?.contents
+    ? Object.values(orderSuccessData.contents)
+    : [];
+
+  // ✅ Parse currency strings safely
+  const parsePrice = (price) =>
+    Number(price?.toString().replace(/[^0-9.-]+/g, "")) || 0;
+
+  // ✅ Summary values
+  const success_subtotal = parsePrice(orderSuccessData?.subtotal);
+  const success_tax = parsePrice(orderSuccessData?.order_tax);
+  const success_shipping = parsePrice(orderSuccessData?.shipping);
+  const success_total = parsePrice(orderSuccessData?.grand_total);
 
   return (
     <div className="min-h-screen bg-gray-100 font-odop">
@@ -295,28 +332,17 @@ export default function CheckoutPage({ formData }) {
                     <p className="text-xs mt-1 text-left text-yellow-200">
                       Order Date :{" "}
                       <span className="font-medium">{orderDate}</span>{" "}
-                      {/* &nbsp; | */}
-                      {/* &nbsp;
-                      <span className="text-yellow-300">
-                        Estimated delivery : {estimatedDelivery}
-                      </span> */}
                     </p>
                   </div>
-                  {/* <div className="flex gap-3">
-                    <button className="px-4 py-2 text-sm bg-white text-[#A00300] font-semibold rounded-full hover:bg-gray-100 transition">
-                      <FileText className="w-4 h-4 inline mr-2" />
-                      Download Invoice
-                    </button>
-                    <button className="px-4 py-2 text-sm bg-white hover:bg-gray-50 text-[#A00300] font-semibold rounded-full transition">
-                      Track Order
-                    </button>
-                  </div> */}
                 </div>
 
                 {/* Ordered Items */}
                 <div className="divide-y divide-gray-400 px-10 py-4 max-h-[320px] overflow-y-auto pr-1">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 py-4">
+                  {success_orderedItems.map((item) => (
+                    <div
+                      key={item.rowid}
+                      className="flex items-center gap-4 py-4"
+                    >
                       <img
                         src={getImageSrc(item.image)}
                         alt={item.name}
@@ -331,21 +357,17 @@ export default function CheckoutPage({ formData }) {
                       <div className="text-right px-5">
                         <p className="text-sm mt-1 text-right">
                           ₹
-                          {(
-                            Number(
-                              item.price?.toString().replace(/[^0-9.-]+/g, "")
-                            ) * Number(item.qty)
-                          ).toFixed(2)}
+                          {(parsePrice(item.price) * Number(item.qty)).toFixed(
+                            2
+                          )}
                         </p>
                         <p className="text-xs text-gray-500">Qty: {item.qty}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-
                 {/* Divider */}
                 <hr className="my-3 border-gray-200" />
-
                 {/* Address / Payment / Delivery */}
                 <div className="px-5 pb-4 flex items-center justify-between">
                   <p className="text-sm font-semibold">Payment method</p>
@@ -353,29 +375,27 @@ export default function CheckoutPage({ formData }) {
                     Razorpay • {paymentId || "Not available"}
                   </span>
                 </div>
-
                 <hr className="my-3 border-gray-200" />
 
                 {/* Price Summary */}
                 <div className="px-5 pb-4 text-sm space-y-2">
                   <div className="flex justify-between">
                     <span>Item cost</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
+                    <span>₹{success_subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>₹{tax.toFixed(2)}</span>
+                    <span>₹{success_tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping fee</span>
-                    <span>₹{shipping.toFixed(2)}</span>{" "}
-                    {/* You can make this dynamic if needed */}
+                    <span>₹{success_shipping.toFixed(2)}</span>
                   </div>
 
                   <hr className="border-gray-300" />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total Cost</span>
-                    <span>₹{total.toFixed(2)}</span>
+                    <span>₹{success_total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

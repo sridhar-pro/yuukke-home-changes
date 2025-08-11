@@ -21,6 +21,9 @@ import {
   X,
   Circle,
   CheckCircle2,
+  Check,
+  SlidersHorizontalIcon,
+  ArrowRightCircle,
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
 import Image from "next/image";
@@ -358,25 +361,30 @@ export default function AllProductsPage() {
                   )}
                 </div>
 
-                {/* Clear Button */}
+                {/* Clear Filters Button - Improved */}
                 {(selectedCategory ||
                   selectedSubcategory ||
                   selectedSubSubcategory ||
                   inStock ||
                   priceRange !== 100000) && (
-                  <button
+                  <motion.button
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
                     onClick={() => {
                       setSelectedCategory(null);
                       setSelectedSubcategory(null);
                       setSelectedSubSubcategory(null);
                       setInStock(false);
-                      setPriceRange(0);
+                      setPriceRange(100000); // Reset to max range instead of 0
                       fetchProductsByCategory(null, null, null);
                     }}
-                    className="text-gray-400 hover:text-black transition-colors p-1"
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
                   >
                     <X className="w-4 h-4" />
-                  </button>
+                    <span>Clear filters</span>
+                  </motion.button>
                 )}
               </div>
 
@@ -418,21 +426,22 @@ export default function AllProductsPage() {
                 </motion.label>
               </div>
 
-              {/* Price Filter */}
+              {/* Price Filter - Redesigned */}
               <div className="space-y-4 border-b border-gray-200  pb-4">
                 <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
-                  <Wallet className="w-4 h-4 text-gray-500" />
-                  Price Filter
+                  <Filter className="w-4 h-4 text-gray-500" />{" "}
+                  {/* Using Filter icon instead of Wallet */}
+                  Price Range
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-gray-600 font-medium font-mono">
-                    <span className="flex items-center gap-1">
-                      <IndianRupee className="w-3.5 h-3.5 text-gray-500" />0
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm text-gray-700 font-medium">
+                    <span className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                      <IndianRupee className="w-3.5 h-3.5" />
+                      {priceRange.toLocaleString()}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <IndianRupee className="w-3.5 h-3.5 text-gray-500" />
-                      1,00,000
+                    <span className="text-xs text-gray-500">
+                      Max: ₹1,00,000
                     </span>
                   </div>
 
@@ -443,25 +452,26 @@ export default function AllProductsPage() {
                     step="100"
                     value={priceRange}
                     onChange={(e) => setPriceRange(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer 
-          [&::-webkit-slider-thumb]:appearance-none
-          [&::-webkit-slider-thumb]:h-4
-          [&::-webkit-slider-thumb]:w-4
-          [&::-webkit-slider-thumb]:rounded-full
-          [&::-webkit-slider-thumb]:bg-black
-          [&::-webkit-slider-thumb]:border-2
-          [&::-webkit-slider-thumb]:border-white
-          [&::-webkit-slider-thumb]:shadow-md
-          [&::-webkit-slider-thumb]:cursor-pointer"
+                    className="w-full h-1.5 bg-gray-300 rounded-full appearance-none cursor-pointer 
+        [&::-webkit-slider-thumb]:appearance-none
+        [&::-webkit-slider-thumb]:h-4
+        [&::-webkit-slider-thumb]:w-4
+        [&::-webkit-slider-thumb]:rounded-full
+        [&::-webkit-slider-thumb]:bg-gray-700
+        [&::-webkit-slider-thumb]:border-2
+        [&::-webkit-slider-thumb]:border-white
+        [&::-webkit-slider-thumb]:shadow-sm"
                   />
+
+                  {/* <div className="flex justify-between text-xs text-gray-500">
+                    <span>₹0</span>
+                    <span>₹1L</span>
+                  </div> */}
                 </div>
 
                 <motion.button
-                  whileHover={{
-                    scale: 1.01,
-                    boxShadow: "0 3px 10px rgba(0,0,0,0.04)",
-                  }}
-                  whileTap={{ scale: 0.96 }}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() =>
                     fetchProductsByCategory(
                       selectedCategory,
@@ -473,18 +483,11 @@ export default function AllProductsPage() {
                       [0, priceRange]
                     )
                   }
-                  className="w-full bg-white text-gray-800 py-2 px-3 rounded-md font-medium border border-gray-200 
-        hover:bg-gray-50 transition-all text-sm flex items-center justify-between"
+                  className="w-full bg-gray-100 text-gray-800 py-2 px-3 rounded-md font-medium border border-gray-200 
+      hover:bg-gray-50 transition-all text-sm flex items-center justify-center gap-2"
                 >
-                  <span className="flex items-center gap-1 text-sm">
-                    <SlidersHorizontal className="w-4 h-4 text-gray-600" />
-                    Apply
-                  </span>
-
-                  <span className="flex items-center gap-1 bg-gray-100 text-gray-600 rounded px-2 py-1 text-xs shadow-inner">
-                    <IndianRupee className="w-3 h-3" />
-                    {priceRange.toLocaleString()}
-                  </span>
+                  Apply Filters
+                  <ArrowRightCircle className="w-4 h-4 text-gray-600" />
                 </motion.button>
               </div>
 

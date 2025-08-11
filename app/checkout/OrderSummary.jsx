@@ -19,6 +19,16 @@ const OrderSummary = () => {
     const shippingRaw = localStorage.getItem("cart_shipping_details");
     const taxRaw = localStorage.getItem("cart_tax_details");
 
+    // If both storage items are missing, reset to empty state
+    if (!shippingRaw && !taxRaw) {
+      setCartItems([]);
+      setSubtotal(0);
+      setShipping(0);
+      setTax(0);
+      setTotal(0);
+      return;
+    }
+
     let sourceData = shippingRaw
       ? JSON.parse(shippingRaw)
       : JSON.parse(taxRaw || "{}");
@@ -33,22 +43,36 @@ const OrderSummary = () => {
   };
 
   useEffect(() => {
+    // Initial load
     updateSummaryFromStorage();
 
     const handleStorageChange = (e) => {
-      if (e.key === "cart_shipping_details") {
+      if (e.key === "cart_shipping_details" || e.key === "cart_tax_details") {
         updateSummaryFromStorage();
       }
     };
 
     const handleCustomStorageUpdate = (e) => {
-      if (e.detail.key === "cart_shipping_details") {
+      if (
+        e.detail.key === "cart_shipping_details" ||
+        e.detail.key === "cart_tax_details"
+      ) {
         updateSummaryFromStorage();
       }
     };
 
+    // New handler for cart cleared event
+    const handleCartCleared = () => {
+      setCartItems([]);
+      setSubtotal(0);
+      setShipping(0);
+      setTax(0);
+      setTotal(0);
+    };
+
     window.addEventListener("storage", handleStorageChange); // other tabs
     window.addEventListener("local-storage-update", handleCustomStorageUpdate); // same tab
+    window.addEventListener("cart-cleared", handleCartCleared); // special clear event
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
@@ -56,6 +80,7 @@ const OrderSummary = () => {
         "local-storage-update",
         handleCustomStorageUpdate
       );
+      window.removeEventListener("cart-cleared", handleCartCleared);
     };
   }, []);
 
