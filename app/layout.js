@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import MobileBottomBar from "./components/MobileBottomBar";
 import ReduxProvider from "./ReduxProvider";
 import TranslationProvider from "./TranslationProvider";
+import { CartProvider } from "./CartContext";
 
 export const metadata = {
   title: "Yuukke",
@@ -47,11 +48,13 @@ export default function RootLayout({ children }) {
           <LoaderWrapper>
             <AuthProvider>
               <main className="pb-16 md:pb-0">
-                <TranslationProvider />
-                <Navbar />
-                {children}
-                <Footer />
-                <TranslationProvider />
+                <CartProvider>
+                  <TranslationProvider />
+                  <Navbar />
+                  {children}
+                  <Footer />
+                  <TranslationProvider />
+                </CartProvider>
               </main>
               <MobileBottomBar />
 

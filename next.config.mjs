@@ -1,7 +1,14 @@
 /** @type {import('next').NextConfig} */
 
-const BASE_API = "https://marketplace.betalearnings.com/api/v1/Marketv2";
+// 🟢 Toggle this to `true` when testing!
+const IS_TEST = true;
+
+// 🔗 API endpoints
+const TEST_API = "https://marketplace.betalearnings.com/api/v1/Marketv2";
 const LIVE_API = "https://marketplace.yuukke.com/api/v1/Marketv2";
+
+// 🧠 Use BASE_API for general rewrites (based on toggle)
+const BASE_API = IS_TEST ? TEST_API : LIVE_API;
 
 const nextConfig = {
   images: {
@@ -21,73 +28,107 @@ const nextConfig = {
     return [
       {
         source: "/api/giftBox",
-        destination: `${LIVE_API}/giftBox`,
+        destination: `${BASE_API}/giftBox`,
       },
       {
         source: "/api/addGiftCard",
-        destination: `${LIVE_API}/addGiftCard`,
+        destination: `${BASE_API}/addGiftCard`,
       },
       {
         source: "/api/addGiftAddons",
-        destination: `${LIVE_API}/giftAddons`,
+        destination: `${BASE_API}/giftAddons`,
       },
       {
         source: "/api/homeCategory",
-        destination: `${LIVE_API}/homeCategory`,
+        destination: `${BASE_API}/homeCategory`,
       },
       {
         source: "/api/quantityCheck",
-        destination: `${LIVE_API}/getProductDetails/`,
+        destination: `${BASE_API}/getProductDetails/`,
       },
       {
         source: "/api/slider",
-        destination: `${LIVE_API}/slider`,
+        destination: `${BASE_API}/slider`,
       },
       {
         source: "/api/mobslider",
-        destination: `${LIVE_API}/mobile_slider`,
+        destination: `${BASE_API}/mobile_slider`,
       },
       {
         source: "/api/newarrival",
-        destination: `${LIVE_API}/newArraivals`,
+        destination: `${BASE_API}/newArraivals`,
       },
       {
         source: "/api/featuredproducts",
-        destination: `${LIVE_API}/featuredProducts`,
+        destination: `${BASE_API}/featuredProducts`,
       },
       {
         source: "/api/festivalproducts",
-        destination: `${LIVE_API}/festivalProducts`,
+        destination: `${BASE_API}/festivalProducts`,
       },
       {
         source: "/api/wellnessproducts",
-        destination: `${LIVE_API}/wellnessProducts`,
+        destination: `${BASE_API}/wellnessProducts`,
       },
       {
         source: "/api/giftproducts",
-        destination: `${LIVE_API}/getGiftsProducts`,
+        destination: `${BASE_API}/getGiftsProducts`,
       },
       {
         source: "/api/corporategiftproducts",
-        destination: `${LIVE_API}/getCorporateGifts`,
+        destination: `${BASE_API}/getCorporateGifts`,
       },
       {
         source: "/api/returngiftproducts",
-        destination: `${LIVE_API}/getReturnGifts`,
+        destination: `${BASE_API}/getReturnGifts`,
       },
-      { source: "/api/vendorlogo", destination: `${LIVE_API}/vendorLogo` },
+      {
+        source: "/api/vendorlogo",
+        destination: `${BASE_API}/vendorLogo`,
+      },
       {
         source: "/api/getNews",
-        destination: `${LIVE_API}/getNews`,
+        destination: `${BASE_API}/getNews`,
       },
       {
         source: "/api/getProducts",
-        destination: `${LIVE_API}/getProducts`,
+        destination: `${BASE_API}/getProducts`,
       },
       {
         source: "/api/addcart",
-        destination: `${LIVE_API}/addTOCart`,
+        destination: `${BASE_API}/addTOCart`,
       },
+      {
+        source: "/api/getTax",
+        destination: `${BASE_API}/calculateTax`,
+      },
+      {
+        source: "/api/shipping",
+        destination: `${BASE_API}/updateshipping`,
+      },
+
+      {
+        source: "/api/createOrder",
+        destination: `${BASE_API}/orderCreatedNext`,
+      },
+      {
+        source: "/api/verifyRazor",
+        destination: `${BASE_API}/verifyRazor`,
+      },
+      {
+        source: "/api/paymentNotify",
+        destination: `${BASE_API}/paymentNotify`,
+      },
+      {
+        source: "/api/cartRemove",
+        destination: `${BASE_API}/cartRemove`,
+      },
+      {
+        source: "/api/applyCoupon",
+        destination: `${BASE_API}/applyCoupon`,
+      },
+
+      // 🔐 These remain constant — always live
       {
         source: "/api/login",
         destination: "https://marketplace.yuukke.com/api/v1/Auth/api_login",

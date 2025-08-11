@@ -11,6 +11,8 @@ import { containerVariants, itemVariants } from "@/app/utils/variants";
 import Head from "next/head";
 
 export default function RelatedProductPage() {
+  const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -202,7 +204,7 @@ export default function RelatedProductPage() {
                     >
                       <div className="relative w-full h-[220px] bg-[#fcfcfc]">
                         <Image
-                          src={`https://marketplace.yuukke.com/assets/uploads/${item.image}`}
+                          src={`https://marketplace.${DOMAIN_KEY}.com/assets/uploads/${item.image}`}
                           alt={item.name}
                           fill
                           className="object-contain group-hover:scale-105 transition-transform duration-500"

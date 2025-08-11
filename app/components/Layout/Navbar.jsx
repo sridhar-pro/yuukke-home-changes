@@ -21,6 +21,8 @@ const messages = [
 export default function Navbar() {
   const { t } = useTranslation();
 
+  const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
+
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -148,7 +150,7 @@ export default function Navbar() {
 
         const mapped = data.map((cat) => ({
           name: cat.name,
-          image: `https://marketplace.yuukke.com/assets/uploads/thumbs/${cat.image}`,
+          image: `https://marketplace.${DOMAIN_KEY}.com/assets/uploads/thumbs/${cat.image}`,
           slug: cat.slug,
           subcategories: cat.subcategories || [],
         }));

@@ -4,15 +4,30 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Eye, X, Star, ShoppingCart, ArrowRight } from "lucide-react";
-import { Minus, Plus, Loader2, ShoppingBag } from "lucide-react";
+import {
+  Heart,
+  Eye,
+  X,
+  Star,
+  ShoppingCart,
+  ArrowRight,
+  Minus,
+  Plus,
+  Loader2,
+  ShoppingBag,
+} from "lucide-react";
 import { useAuth } from "@/app/utils/AuthContext";
 import CartSidebar from "../../components/CartSideBar";
 import { toast } from "react-toastify";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import { useTranslation } from "react-i18next";
 
 const FeaturedProducts = () => {
+  const { t } = useTranslation();
+
+  const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
+
   const [giftProducts, setGiftProducts] = useState([]);
   const [newArrivalProducts, setNewArrivalProducts] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -20,10 +35,6 @@ const FeaturedProducts = () => {
   const [wellnessProducts, setWellnessProducts] = useState([]);
   const [corporateProducts, setCorporateProducts] = useState([]);
   const [returnProducts, setReturnProducts] = useState([]);
-  // const [loading, setLoading] = useState({
-  //   featured: true,
-  //   trending: true,
-  // });
   const [error, setError] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
@@ -217,6 +228,8 @@ const FeaturedProducts = () => {
     }
   }, [quickViewProduct]);
 
+  const MAX_LIMIT = Math.min(quickViewProduct?.quantity || 100, 10);
+
   const toggleWishlist = (slug) => {
     setWishlist((prev) =>
       prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
@@ -264,15 +277,7 @@ const FeaturedProducts = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          {title}
-
-          {/* Decorative squiggle underline (optional) */}
-          {/* <img
-            src="/squiggle-underline.svg"
-            alt=""
-            aria-hidden="true"
-            className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-[120px] sm:w-[140px]"
-          /> */}
+          {t(title)}
         </motion.h3>
 
         {/* View All link */}
@@ -283,7 +288,7 @@ const FeaturedProducts = () => {
           whileTap={{ scale: 0.96 }}
           transition={{ delay: 0.5, duration: 0.4 }}
         >
-          View All Products →
+          {t("View All Products →")}
         </motion.a>
       </motion.div>
     );
@@ -365,7 +370,7 @@ const FeaturedProducts = () => {
             >
               {/* Out of Stock Overlay */}
               {isOutOfStock && (
-                <div className="absolute inset-0 bg-white/10 z-[70] rounded-2xl flex items-center justify-center">
+                <div className="absolute inset-0 bg-white/10 z-[80] rounded-2xl flex items-center justify-center">
                   <span className="bg-[#A00300] text-white text-sm font-bold px-3 py-1 rounded-lg">
                     Out of Stock
                   </span>
@@ -375,13 +380,13 @@ const FeaturedProducts = () => {
               {/* Business Type Badges */}
               {product.business_type === "3" && (
                 <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
-                  Premium
+                  {t("Premium")}
                 </span>
               )}
 
               {product.business_type === "2" && (
                 <span className="absolute top-2 left-2 bg-green-500 text-white text-[10px] sm:text-sm font-semibold px-1.5 sm:px-2 py-[2px] sm:py-0.5 rounded-lg shadow-md z-10 border border-[#A00300]/20">
-                  Verified
+                  {t("Verified")}
                 </span>
               )}
 
@@ -458,6 +463,7 @@ const FeaturedProducts = () => {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          console.log("Quick View Product Data:", product);
                           setQuickViewProduct(product);
                           setQuantity(1);
                         }}
@@ -474,6 +480,7 @@ const FeaturedProducts = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        console.log("Quick View Product Data:", product);
                         setQuickViewProduct(product);
                         setQuantity(1);
                       }}
@@ -563,7 +570,7 @@ const FeaturedProducts = () => {
                               Number(product.price)) *
                               100
                           )}
-                          % OFF
+                          {t("% OFF")}
                         </span>
                       </>
                     ) : (
@@ -851,7 +858,7 @@ const FeaturedProducts = () => {
                                     quickViewProduct.price) *
                                     100
                                 )}
-                                % OFF
+                                {t("% OFF")}
                               </span>
                             </>
                           ) : (
@@ -864,10 +871,10 @@ const FeaturedProducts = () => {
                       )}
                     </div>
 
-                    <p className="text-gray-600 leading-relaxed text-xs sm:text-sm mb-4 md:mb-6 line-clamp-3 md:line-clamp-none">
+                    {/* <p className="text-gray-600 leading-relaxed text-xs sm:text-sm mb-4 md:mb-6 line-clamp-3 md:line-clamp-none">
                       {quickViewProduct.description ||
                         "This premium product offers exceptional quality and design."}
-                    </p>
+                    </p> */}
 
                     {/* View Full Details Button */}
                     <div className="mt-4">
@@ -875,7 +882,7 @@ const FeaturedProducts = () => {
                         href={`/products/${quickViewProduct.slug}`}
                         className="inline-flex items-center gap-2 px-4 py-2 text-sm sm:text-base font-semibold text-white bg-gray-900 hover:bg-gray-700 transition-colors rounded-lg shadow-md cursor-pointer"
                       >
-                        View Full Details
+                        {t("View Full Details")}
                         <ArrowRight className="w-4 h-4" />
                       </Link>
                     </div>
@@ -909,26 +916,22 @@ const FeaturedProducts = () => {
                         {/* Increase Button */}
                         <button
                           onClick={increaseQty}
-                          disabled={
-                            quantity >= (quickViewProduct?.quantity || 100)
-                          }
+                          disabled={quantity >= MAX_LIMIT}
                           className={`w-10 h-10 flex items-center justify-center relative rounded-lg transition-all duration-200 cursor-pointer ${
-                            quantity >= (quickViewProduct?.quantity || 100)
+                            quantity >= MAX_LIMIT
                               ? "bg-gray-100 cursor-not-allowed text-gray-400"
                               : "bg-white hover:bg-gray-100 text-gray-600"
                           } active:scale-95`}
                           aria-label={
-                            quantity >= (quickViewProduct?.quantity || 100)
-                              ? `Max ${
-                                  quickViewProduct?.quantity || 100
-                                } available`
+                            quantity >= MAX_LIMIT
+                              ? `Max ${MAX_LIMIT} available`
                               : "Increase quantity"
                           }
                         >
                           <Plus className="w-4 h-4" />
-                          {quantity >= (quickViewProduct?.quantity || 100) && (
+                          {quantity >= MAX_LIMIT && (
                             <span className="absolute -bottom-6 text-[10px] text-red-500 font-medium whitespace-nowrap">
-                              Max {quickViewProduct?.quantity || 100} available
+                              Max {MAX_LIMIT} available
                             </span>
                           )}
                         </button>
@@ -966,12 +969,95 @@ const FeaturedProducts = () => {
                                 localStorage.setItem("cart_id", cartId);
                               }
 
-                              // Get existing cart
+                              // Backend payload
+                              const payload = {
+                                selected_country: "IN",
+                                product_id: quickViewProduct.id,
+                                historypincode: 614624,
+                                qty: quantity,
+                                cart_id: cartId,
+                              };
+
+                              // Auth helper
+                              const fetchToken = async () => {
+                                const res = await fetch("/api/login", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    username: "admin",
+                                    password: "Admin@123",
+                                  }),
+                                });
+                                const data = await res.json();
+                                if (data.status === "success") {
+                                  localStorage.setItem("authToken", data.token);
+                                  return data.token;
+                                }
+                                throw new Error("Authentication failed");
+                              };
+
+                              // Fetch token
+                              let token = localStorage.getItem("authToken");
+                              if (!token) token = await fetchToken();
+
+                              // Call backend to sync cart
+                              let response = await fetch("/api/addcart", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify(payload),
+                              });
+
+                              // Retry on 401
+                              if (response.status === 401) {
+                                localStorage.removeItem("authToken");
+                                const retryToken = await fetchToken();
+                                response = await fetch("/api/addcart", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${retryToken}`,
+                                  },
+                                  body: JSON.stringify(payload),
+                                });
+                              }
+
+                              const result = await response.json();
+                              console.log(
+                                "🛰️ Synced with backend cart:",
+                                result
+                              );
+
+                              const newCartId =
+                                result.cart_ids && result.cart_ids.length > 0
+                                  ? result.cart_ids[0]
+                                  : cartId;
+
+                              console.log(
+                                "🆕 Using cart ID for coupon:",
+                                newCartId
+                              );
+
+                              // 🛑 Stop here if sync failed
+                              if (result.status !== "success") {
+                                console.warn(
+                                  "🚫 Backend cart sync failed:",
+                                  result
+                                );
+                                return;
+                              }
+
+                              // ✅ Proceed only if success
+
+                              // Update local cart
                               const existingCart = JSON.parse(
                                 localStorage.getItem("cart_data") || "[]"
                               );
 
-                              // Update cart
                               const existingItemIndex = existingCart.findIndex(
                                 (item) => item.id === quickViewProduct.id
                               );
@@ -980,10 +1066,7 @@ const FeaturedProducts = () => {
                                 existingItemIndex >= 0
                                   ? existingCart.map((item, i) =>
                                       i === existingItemIndex
-                                        ? {
-                                            ...item,
-                                            qty: item.qty + quantity,
-                                          }
+                                        ? { ...item, qty: item.qty + quantity }
                                         : item
                                     )
                                   : [
@@ -1009,19 +1092,102 @@ const FeaturedProducts = () => {
                                       },
                                     ];
 
-                              // Update state and storage
                               localStorage.setItem(
                                 "cart_data",
                                 JSON.stringify(updatedCart)
                               );
                               setCartItems(updatedCart);
+                              console.log(
+                                "🧾 Local cart updated:",
+                                updatedCart
+                              );
 
-                              // Close quick view first, then open cart
+                              // Apply coupon
+                              try {
+                                const couponRes = await fetch(
+                                  "/api/applyCoupon",
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    body: JSON.stringify({
+                                      cart_id: newCartId, // Use the same variable, no extra getItem call needed
+                                      coupon_code: "0",
+                                    }),
+                                  }
+                                );
+
+                                if (!couponRes.ok)
+                                  throw new Error("Failed to apply coupon");
+
+                                const couponData = await couponRes.json();
+                                console.log(
+                                  "🎯 Coupon API Response after addToCart:",
+                                  couponData
+                                );
+                              } catch (couponError) {
+                                console.error(
+                                  "🚫 Error applying coupon after addToCart:",
+                                  couponError
+                                );
+                              }
+
+                              // 🧾 Tax data fetch
+                              try {
+                                const taxRes = await fetch("/api/getTax", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    Authorization: `Bearer ${token}`,
+                                  },
+                                  body: JSON.stringify({ cart_id: cartId }),
+                                });
+
+                                if (taxRes.status === 401) {
+                                  localStorage.removeItem("authToken");
+                                  const retryToken = await fetchToken();
+                                  const retryTaxRes = await fetch(
+                                    "/api/getTax",
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Bearer ${retryToken}`,
+                                      },
+                                      body: JSON.stringify({ cart_id: cartId }),
+                                    }
+                                  );
+
+                                  const taxData = await retryTaxRes.json();
+                                  localStorage.setItem(
+                                    "cart_tax_details",
+                                    JSON.stringify(taxData)
+                                  );
+                                  console.log(
+                                    "💸 Tax details (retried):",
+                                    taxData
+                                  );
+                                } else {
+                                  const taxData = await taxRes.json();
+                                  localStorage.setItem(
+                                    "cart_tax_details",
+                                    JSON.stringify(taxData)
+                                  );
+                                  console.log("💸 Tax details:", taxData);
+                                }
+                              } catch (taxError) {
+                                console.error(
+                                  "🚫 Failed to fetch tax details:",
+                                  taxError
+                                );
+                              }
+
+                              // UI feedback
                               setQuickViewProduct(null);
-
                               setIsCartOpen(true);
-
-                              toast.success("Added to cart!");
+                              toast.success("🛒 Added to cart!");
                             } catch (error) {
                               console.error("Add to cart error:", error);
                               toast.error("Failed to add to cart");
@@ -1040,7 +1206,7 @@ const FeaturedProducts = () => {
                         >
                           <span className="relative z-10 flex items-center justify-center gap-2 transition-colors duration-300 group-hover:text-white">
                             <ShoppingCart className="w-5 h-5" />
-                            {isAdding ? "Adding..." : "Add to Cart"}
+                            {isAdding ? t("Adding...") : t("Add to Cart")}
                           </span>
                           <span
                             className="absolute left-0 top-0 h-full w-0 bg-black transition-all duration-[900ms] ease-in-out group-hover:w-full z-[1] rounded-xl"
@@ -1126,8 +1292,53 @@ const FeaturedProducts = () => {
                           const result = await response.json();
                           console.log("Add to cart result:", result);
 
+                          // 🆕 6. Get Tax API call (only if addcart was successful)
+                          // 🧾 Tax data fetch
+                          try {
+                            const taxRes = await fetch("/api/getTax", {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                              },
+                              body: JSON.stringify({ cart_id: cartId }),
+                            });
+
+                            if (taxRes.status === 401) {
+                              localStorage.removeItem("authToken");
+                              const retryToken = await fetchToken();
+                              const retryTaxRes = await fetch("/api/getTax", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${retryToken}`,
+                                },
+                                body: JSON.stringify({ cart_id: cartId }),
+                              });
+
+                              const taxData = await retryTaxRes.json();
+                              localStorage.setItem(
+                                "cart_tax_details",
+                                JSON.stringify(taxData)
+                              );
+                              console.log("💸 Tax details (retried):", taxData);
+                            } else {
+                              const taxData = await taxRes.json();
+                              localStorage.setItem(
+                                "cart_tax_details",
+                                JSON.stringify(taxData)
+                              );
+                              console.log("💸 Tax details:", taxData);
+                            }
+                          } catch (taxError) {
+                            console.error(
+                              "🚫 Failed to fetch tax details:",
+                              taxError
+                            );
+                          }
+
                           if (result.redirect_link) {
-                            window.location.href = result.redirect_link; // Immediate redirect
+                            window.location.href = "/checkout";
                           } else {
                             console.warn("No redirect link returned from API");
                           }
@@ -1138,7 +1349,7 @@ const FeaturedProducts = () => {
                       className="group relative w-full overflow-hidden rounded-xl py-3 px-4 font-semibold border-1 border-white transition-all duration-500 ease-in-out hover:border-black cursor-pointer"
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2 text-white group-hover:text-black transition-colors duration-500 ease-in-out">
-                        Buy It Now
+                        {t("Buy It Now")}
                       </span>
                       <span className="absolute left-0 top-0 h-full w-0 bg-white transition-all duration-[900ms] ease-in-out group-hover:w-full z-0"></span>
                       <span className="absolute inset-0 bg-black z-[-1] rounded-xl"></span>

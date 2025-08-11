@@ -19,7 +19,7 @@ const LanguageSwitcher = () => {
   const toggleDropdown = () => setOpen((prev) => !prev);
 
   const changeLang = (lang) => {
-    i18n.changeLanguage(lang);
+    i18n.changeLanguage(lang.toLowerCase());
     localStorage.setItem("i18nextLng", lang);
     setOpen(false); // Close dropdown after selection
   };
@@ -35,7 +35,7 @@ const LanguageSwitcher = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const currentLangCode = i18n.language.toUpperCase();
+  const currentLangCode = i18n.language.split("-")[0].toUpperCase();
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>

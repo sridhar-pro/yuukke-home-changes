@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Link from "next/link";
+import { setLocalStorageWithEvent } from "../utils/storageEvents";
 
 const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
   // Format price to show 2 decimal places
@@ -12,10 +13,12 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
     return parseFloat(price).toFixed(2);
   };
 
+  const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
+
   const getImageSrc = (image) => {
     if (!image) return "/fallback.png";
     if (image.startsWith("http") || image.startsWith("/")) return image;
-    return `https://marketplace.yuukke.com/assets/uploads/${image}`;
+    return `https://marketplace.${DOMAIN_KEY}.com/assets/uploads/${image}`;
   };
 
   // Memoized RecommendedProductsSlider component
@@ -185,8 +188,73 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
     }
   );
 
+  const syncCartWithServer = async (productId, qty) => {
+    const cartId =
+      localStorage.getItem("cart_id") ||
+      (() => {
+        const id =
+          Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+        localStorage.setItem("cart_id", id);
+        return id;
+      })();
+
+    const payload = {
+      selected_country: "IN",
+      product_id: productId,
+      historypincode: 614624,
+      qty,
+      cart_id: cartId,
+    };
+
+    const fetchToken = async () => {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: "admin",
+          password: "Admin@123",
+        }),
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        localStorage.setItem("authToken", data.token);
+        return data.token;
+      } else {
+        throw new Error("Authentication failed");
+      }
+    };
+
+    let token = localStorage.getItem("authToken");
+    if (!token) token = await fetchToken();
+
+    let response = await fetch("/api/addcart", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem("authToken");
+      const retryToken = await fetchToken();
+      response = await fetch("/api/addcart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${retryToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    const result = await response.json();
+    console.log("🔁 Cart sync result:", result);
+  };
+
   const updateCartItem = (id, newQty) => {
-    // Ensure quantity is at least 1
     const validatedQty = Math.max(1, newQty);
 
     const updatedCart = cartItems
@@ -201,7 +269,9 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
     localStorage.setItem("cart_data", JSON.stringify(updatedCart));
     setCartItems(updatedCart);
 
-    // Return the updated quantity for potential use
+    // 🆕 Sync to server
+    syncCartWithServer(id, validatedQty).catch(console.error);
+
     return validatedQty;
   };
 
@@ -224,24 +294,97 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
       }
     }
   };
+
   const removeItem = async (id) => {
-    // Store current cart items for potential rollback
     const currentCart = [...cartItems];
 
     try {
-      // Optimistic update - remove immediately
+      // Optimistically remove from UI
       const updatedCart = cartItems.filter((item) => item.id !== id);
       setCartItems(updatedCart);
       localStorage.setItem("cart_data", JSON.stringify(updatedCart));
 
-      // Clear redirect links if cart is empty
+      // 🔍 STEP 1: Find matching rowid from tax data
+      const taxData = JSON.parse(
+        localStorage.getItem("cart_tax_details") || "{}"
+      );
+      const cartId = localStorage.getItem("cart_id");
+
+      let rowidToDelete = null;
+
+      if (taxData.contents && typeof taxData.contents === "object") {
+        for (const [key, item] of Object.entries(taxData.contents)) {
+          if (item.product_id === id || item.id === id) {
+            rowidToDelete = item.rowid || key; // Use rowid from the item itself, fallback to key
+            break;
+          }
+        }
+      }
+
+      if (!rowidToDelete) {
+        console.warn("⚠️ Row ID not found for product ID:", id);
+      } else {
+        delete taxData.contents[rowidToDelete]; // 🧽 Clean that rowid!
+        setLocalStorageWithEvent("cart_tax_details", taxData); // 🗂️ Update tax data
+
+        const token = localStorage.getItem("authToken");
+        const removeRes = await fetch("/api/cartRemove", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cart_id: cartId,
+            rowid: rowidToDelete,
+          }),
+        });
+
+        const removeData = await removeRes.json();
+        console.log("🧹 Server cart removal response:", removeData);
+
+        if (removeData.status === "success") {
+          const serverTaxData = removeData.cart_data || {};
+          const localTaxData = { ...taxData };
+
+          // Clean the same rowid from server data just in case it’s stale
+          if (
+            serverTaxData.contents &&
+            typeof serverTaxData.contents === "object" &&
+            rowidToDelete
+          ) {
+            delete serverTaxData.contents[rowidToDelete];
+          }
+
+          // Final merged data: fallback to local if server data still has ghosts
+          const finalTaxData = {
+            ...serverTaxData,
+            contents: {
+              ...(serverTaxData.contents || {}),
+            },
+          };
+
+          setLocalStorageWithEvent("cart_tax_details", finalTaxData);
+
+          const customEvent = new CustomEvent("local-storage-update", {
+            detail: { key: "cart_tax_details" },
+          });
+          window.dispatchEvent(customEvent);
+
+          console.log("🧹 Final merged and cleaned tax data:", finalTaxData);
+        }
+      }
+
+      // 🧼 Clear redirect links if needed
       if (updatedCart.length === 0) {
         localStorage.removeItem("last_redirect_link");
         localStorage.removeItem("cart_redirect_link");
         localStorage.removeItem("cart_id");
+        localStorage.removeItem("cart_data"); // 🧹 Don't forget to kill the cart data itself!
+        localStorage.removeItem("cart_tax_details");
       }
 
-      // Show undo toast
+      // 🧈 Toast success
       toast.success(
         <div className="text-center">
           Item removed from cart
@@ -262,10 +405,11 @@ const CartSidebar = ({ isOpen, onClose, cartItems = [], setCartItems }) => {
         }
       );
     } catch (error) {
-      console.error("Error removing item:", error);
-      // Revert changes
+      console.error("❌ Error removing item:", error);
       setCartItems(currentCart);
       localStorage.setItem("cart_data", JSON.stringify(currentCart));
+
+      console.log("🕵️ Found rowid:", rowidToDelete);
 
       toast.error(
         <div className="text-center">

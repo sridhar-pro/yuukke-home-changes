@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
 
 const LogoSlider = () => {
+  const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
+
   const [logos, setLogos] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const { getValidToken } = useAuth();
@@ -42,7 +44,7 @@ const LogoSlider = () => {
         const logoUrls = data.map((vendor) => ({
           id: vendor.id,
           slug: vendor.slug,
-          logo: `https://marketplace.yuukke.com/assets/uploads/${vendor.store_logo}`,
+          logo: `https://marketplace.${DOMAIN_KEY}.com/assets/uploads/${vendor.store_logo}`,
         }));
         setLogos(logoUrls);
       } catch (error) {

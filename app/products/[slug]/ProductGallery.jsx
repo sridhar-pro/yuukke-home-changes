@@ -35,6 +35,7 @@ import CartSidebar from "@/app/components/CartSideBar";
 
 export default function ProductGalleryPage() {
   const { getValidToken } = useAuth();
+  const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -256,6 +257,7 @@ export default function ProductGalleryPage() {
     try {
       setLoading(true);
       const parsed = JSON.parse(cached);
+      console.log("data", parsed);
       const p = parsed.data;
 
       setProduct({
@@ -403,89 +405,158 @@ export default function ProductGalleryPage() {
     }
   };
 
+  const fetchWithAuth = async (url, options = {}, retry = false) => {
+    const token = await getValidToken();
+
+    const finalOptions = {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    const res = await fetch(url, finalOptions);
+
+    if (res.status === 401 && !retry) {
+      localStorage.removeItem("authToken");
+      return fetchWithAuth(url, options, true);
+    }
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ TAX API ERROR RESPONSE:", res.status, errorText);
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    return res;
+  };
+
   const handleAddToCart = async () => {
     if (isAdding || !product?.id) return;
     setIsAdding(true);
 
+    console.log("🛒 Initiating add-to-cart from single product page...");
+
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     try {
-      // Step 1: Get or create cart ID
+      // Step 1: Cart ID
       let cartId = localStorage.getItem("cart_id");
       if (!cartId) {
         cartId =
           Math.random().toString(36).substring(2, 15) +
           Math.random().toString(36).substring(2, 15);
         localStorage.setItem("cart_id", cartId);
+        console.log("🆕 New cart ID created:", cartId);
       }
 
-      // Step 2: Get existing cart data
+      // Step 2: Existing cart
       const existingCart = JSON.parse(
         localStorage.getItem("cart_data") || "[]"
       );
-
-      // Step 3: Check if item exists in cart
-      const existingItemIndex = existingCart.findIndex(
+      const existingIndex = existingCart.findIndex(
         (item) => item.id === product.id
       );
 
       const maxQty = product.quantity || 0;
-
-      // Step 4: Validate quantity
       if (quantity > maxQty) {
         toast.error(`Only ${maxQty} items available in stock.`);
         setIsAdding(false);
         return;
       }
 
-      // Step 5: Update or insert item (replace qty, not add)
-      let updatedCart;
-      if (existingItemIndex >= 0) {
-        updatedCart = existingCart.map((item, i) =>
-          i === existingItemIndex
-            ? { ...item, qty: quantity } // 👈 REPLACEMENT instead of +=
-            : item
-        );
-      } else {
-        updatedCart = [
-          ...existingCart,
-          {
-            id: product.id,
-            name: product.name,
-            qty: quantity,
-            price:
-              product.promo_price &&
-              product.end_date &&
-              new Date(product.end_date) > new Date() &&
-              Number(product.promo_price) > 0 &&
-              Number(product.promo_price) < Number(product.price)
-                ? Number(product.promo_price)
-                : Number(product.price),
-            image: product.image,
-          },
-        ];
-      }
+      // Step 3: Promo logic
+      const finalPrice =
+        product.promo_price &&
+        product.end_date &&
+        new Date(product.end_date) > new Date() &&
+        Number(product.promo_price) > 0 &&
+        Number(product.promo_price) < Number(product.price)
+          ? Number(product.promo_price)
+          : Number(product.price);
 
-      // Step 6: Save updated cart
+      const cartItem = {
+        id: product.id,
+        name: product.name,
+        qty: quantity,
+        price: finalPrice,
+        image: product.image,
+      };
+
+      const updatedCart =
+        existingIndex >= 0
+          ? existingCart.map((item, i) =>
+              i === existingIndex ? { ...item, qty: item.qty + quantity } : item
+            )
+          : [...existingCart, cartItem];
+
       localStorage.setItem("cart_data", JSON.stringify(updatedCart));
       setCartItems(updatedCart);
 
-      if (typeof setQuickViewProduct === "function") {
-        setQuickViewProduct(null);
+      // 🛡️ Step 4: Authenticated Add to Backend Cart
+      const token = await getValidToken(); // 🎯 Your useAuth's blessed function
+
+      if (!token) {
+        toast.error("🔐 Login required to add item to cart.");
+        setIsAdding(false);
+        return;
       }
 
-      if (typeof setIsCartOpen === "function") {
-        setIsCartOpen(true);
+      const payload = {
+        selected_country: "IN",
+        product_id: product.id,
+        historypincode: 614624,
+        qty: quantity,
+        cart_id: cartId,
+      };
+
+      let response = await fetch("/api/addcart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.status === 401) {
+        toast.error("⚠️ Session expired. Please login again.");
+        setIsAdding(false);
+        return;
       }
 
-      const encodedSlug = encodeURIComponent(product.slug || product.id);
+      const result = await response.json();
+      console.log("✅ Synced with backend cart:", result);
 
-      toast.success("🎉 Product added to cart!");
-    } catch (error) {
-      console.error("Add to cart error:", error);
-      toast.error("❌ Failed to add to cart");
+      // 💸 Step 5: Fetch tax details
+      try {
+        const taxRes = await fetch("/api/getTax", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ cart_id: cartId }),
+        });
+
+        const taxData = await taxRes.json();
+        localStorage.setItem("cart_tax_details", JSON.stringify(taxData));
+        console.log("💸 Tax details:", taxData);
+      } catch (taxError) {
+        console.error("🚫 Failed to fetch tax details:", taxError);
+        toast.warning("Tax info not updated");
+      }
+
+      // 🧼 Wrap it up
+      setIsCartOpen?.(true);
+      toast.success("✅ Added to cart!");
+    } catch (err) {
+      console.error("💥 Add to cart failed:", err);
+      toast.error("Something went wrong!");
     } finally {
       setIsAdding(false);
+      console.log("🏁 Add to cart completed.");
     }
   };
 
@@ -1007,7 +1078,7 @@ export default function ProductGalleryPage() {
                     {product.store_details?.[0]?.store_logo && (
                       <div className="w-full h-[320px] bg-gray-50 flex items-center justify-center px-6">
                         <Image
-                          src={`https://marketplace.yuukke.com/assets/uploads/${product.store_details[0].store_logo}`}
+                          src={`https://marketplace.${DOMAIN_KEY}.com/assets/uploads/${product.store_details[0].store_logo}`}
                           alt={
                             product.store_details[0].company_name ||
                             "Store logo"
@@ -1104,7 +1175,7 @@ export default function ProductGalleryPage() {
 
                           <div className="relative aspect-square bg-gray-50">
                             <Image
-                              src={`https://marketplace.yuukke.com/assets/uploads/${item.image}`}
+                              src={`https://marketplace.${DOMAIN_KEY}.com/assets/uploads/${item.image}`}
                               alt={item.name}
                               fill
                               className="object-cover w-full h-full transition-opacity group-hover:opacity-85"
