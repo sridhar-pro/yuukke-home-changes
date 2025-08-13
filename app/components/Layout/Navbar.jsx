@@ -441,6 +441,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu Dropdown */}
+        {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div
             ref={menuRef}
@@ -457,13 +458,20 @@ export default function Navbar() {
               {isProductsOpen && (
                 <div className="ml-4 mt-2 space-y-0 text-gray-600">
                   {productCategories.map((category) => (
-                    <a
+                    <Link
                       key={category.slug}
-                      href={`https://marketplace.yuukke.com/category/${category.slug}`}
+                      href={{
+                        pathname: "/products",
+                        query: { category: category.slug },
+                      }}
                       className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-md rounded"
+                      onClick={() => {
+                        setIsProductsOpen(false);
+                        setMobileMenuOpen(false); // Add this to close the entire menu
+                      }}
                     >
                       {category.name}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -479,32 +487,19 @@ export default function Navbar() {
               </button>
               {isOdopOpen && (
                 <div className="ml-4 mt-2 space-y-1 text-gray-600">
+                  <Link
+                    href="/odop-registration"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-md rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
+                  >
+                    {t("ODOP Registration")}
+                  </Link>
                   <a
                     href="https://marketplace.yuukke.com/odop/uttar-pradesh"
                     className="block px-4 py-2 hover:bg-gray-100 text-gray-800 text-md rounded"
                   >
-                    {t("ODOP Registration")}
-                  </a>
-                  {/* <a
-                    href="/odop-registration"
-                    onClick={(e) => {
-                      e.preventDefault(); // Stop default nav
-                      document.cookie = "googtrans=/en/hi; path=/;";
-                      // Optional: clear the 'reset-reloaded' flag so we don't wipe this translation
-                      sessionStorage.removeItem("reset-reloaded");
-                      // Now trigger full reload to that page
-                      window.location.href = "/odop-registration";
-                    }}
-                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-md rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
-                  >
-                    ODOP Registration
-                  </a> */}
-                  <Link
-                    href="/odop-registration"
-                    className="px-4 py-2.5 hover:bg-gray-50 text-gray-800 text-md rounded-lg transition-all duration-200 flex items-center gap-2 mt-1"
-                  >
                     {t("Uttar Pradesh")}
-                  </Link>
+                  </a>
                 </div>
               )}
             </div>
@@ -512,6 +507,7 @@ export default function Navbar() {
             <a
               href="https://marketplace.yuukke.com/shop/deal"
               className="block py-1 hover:text-black transition"
+              onClick={() => setMobileMenuOpen(false)} // Add this
             >
               {t("Offers")}
             </a>
@@ -519,6 +515,7 @@ export default function Navbar() {
             <Link
               href="https://gift.yuukke.com/"
               className="block py-1 hover:text-black transition"
+              onClick={() => setMobileMenuOpen(false)} // Add this
             >
               {t("Gifts")}
             </Link>

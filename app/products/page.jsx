@@ -219,6 +219,9 @@ export default function AllProductsPage() {
 
     const isMobile = window.innerWidth < 768; // or use a responsive hook
 
+    // 🎯 Smart price filter handling
+    const isDefaultRange = priceRange[0] === 1 && priceRange[1] === 100000;
+
     const body = {
       filters: {
         gifts_products: "",
@@ -230,13 +233,14 @@ export default function AllProductsPage() {
           : {},
         brand: "",
         sorting: "name-asc",
-        min_price: "1",
-        max_price: "0",
+        ...(isDefaultRange
+          ? { min_price: "1", max_price: "0" }
+          : { min_price: `${priceRange[0]}`, max_price: `${priceRange[1]}` }),
         in_stock: inStockValue ? "1" : "0",
         page: isMobile ? "1" : `${page}`,
         sort_by_v: sortValue,
-        limit: isMobile ? "100" : "24",
-        offset: isMobile ? "0" : `${(page - 1) * 24}`,
+        limit: 24,
+        offset: `${(page - 1) * 24}`,
       },
     };
 

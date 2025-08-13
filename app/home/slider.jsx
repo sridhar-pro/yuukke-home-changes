@@ -6,24 +6,14 @@ import { useSwipeable } from "react-swipeable";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function ImagesSliderDemo() {
-  const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
-
   const [desktopImages, setDesktopImages] = useState([]);
   const [mobileImages, setMobileImages] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // default immediately
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [loading, setLoading] = useState(true);
   const hasFetched = useRef(false);
   const baseUrl = `https://marketplace.yuukke.com/assets/uploads/`;
 
-  const staticMobileLinks = [
-    "https://marketplace.yuukke.com/shop/deal",
-    "https://marketplace.yuukke.com/seller/olitia-foods-pvt-ltd",
-    "https://marketplace.yuukke.com/seller/ojaswi-arts",
-    "https://marketplace.yuukke.com/seller/apaar-kala-92736",
-  ];
-
-  // Immediately fetch images on mount
   useEffect(() => {
     if (hasFetched.current) return;
 
@@ -31,24 +21,33 @@ export function ImagesSliderDemo() {
       hasFetched.current = true;
       setLoading(true);
       try {
-        const endpoint = isMobile ? "/api/mobslider" : "/api/slider";
-        const res = await fetch(endpoint);
+        // Fetch desktop images
+        const desktopRes = await fetch("/api/slider");
+        if (!desktopRes.ok) throw new Error("Failed to fetch desktop slider");
+        const desktopData = await desktopRes.json();
 
-        if (!res.ok) throw new Error("Failed to fetch");
+        // Fetch mobile images
+        const mobileRes = await fetch("/api/mobslider");
+        if (!mobileRes.ok) throw new Error("Failed to fetch mobile slider");
+        const mobileData = await mobileRes.json();
 
-        const data = await res.json();
-
-        const formatted = Object.values(data).map((item, index) => ({
+        // Format desktop images
+        const formattedDesktop = Object.values(desktopData).map((item) => ({
           src: `${baseUrl}${item.image}`,
-          href: isMobile
-            ? staticMobileLinks[index] || "#" // 🪄 fallback to '#' if index overflows
-            : item.link || "#",
+          href: item.link || "#",
           title: item.title || "",
         }));
 
-        // Preload images
+        // Format mobile images - now using links from API
+        const formattedMobile = Object.values(mobileData).map((item) => ({
+          src: `${baseUrl}${item.image}`,
+          href: item.link || "#", // Now using link from API instead of static
+          title: item.title || "",
+        }));
+
+        // Preload all images
         await Promise.all(
-          formatted.map(
+          [...formattedDesktop, ...formattedMobile].map(
             (img) =>
               new Promise((resolve) => {
                 const image = new Image();
@@ -59,7 +58,8 @@ export function ImagesSliderDemo() {
           )
         );
 
-        isMobile ? setMobileImages(formatted) : setDesktopImages(formatted);
+        setDesktopImages(formattedDesktop);
+        setMobileImages(formattedMobile);
       } catch (err) {
         console.error("Slider fetch error:", err);
       } finally {
@@ -76,7 +76,7 @@ export function ImagesSliderDemo() {
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isMobile]);
+  }, []); // Removed isMobile dependency since we fetch both at once
 
   const images = isMobile ? mobileImages : desktopImages;
 
@@ -94,21 +94,18 @@ export function ImagesSliderDemo() {
     exit: { opacity: 0, scale: 1.02 },
   };
 
-  // {added auto-slide}
   useEffect(() => {
-    if (images.length <= 1) return; // Don't auto-slide if only 1 image
+    if (images.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % images.length);
-    }, 5000); // Change every 5 seconds
+    }, 5000);
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => clearInterval(interval);
   }, [images, currentIndex]);
 
   return (
     <div className="px-2 lg:px-8 mt-2 lg:mt-4">
-      {" "}
-      {/* <-- NEW WRAPPER */}
       <div
         {...swipeHandlers}
         className="relative w-full aspect-[520/600] md:h-auto md:aspect-[16/4] overflow-hidden touch-pan-x rounded-2xl"
@@ -179,9 +176,7 @@ export function ImagesSliderDemo() {
                 />
               ))}
             </div>
-            {/* Subtle randomized shade effect at the bottom */}
             <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-40 overflow-hidden">
-              {/* Gradient base */}
               <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-[#A00300]/20 to-transparent" />
             </div>
           </>
