@@ -328,6 +328,14 @@ export default function Navbar() {
               >
                 {t("Gifts")}
               </Link>
+
+              {/* Tracking Link */}
+              <Link
+                href="/track-order"
+                className="transition-all py-2 px-1 font-medium text-gray-700 hover:text-gray-900"
+              >
+                {t("Track Order")}
+              </Link>
             </div>
           </div>
 
@@ -441,7 +449,6 @@ export default function Navbar() {
         </div>
 
         {/* Mobile Menu Dropdown */}
-        {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div
             ref={menuRef}
@@ -518,6 +525,15 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)} // Add this
             >
               {t("Gifts")}
+            </Link>
+
+            {/* Tracking Link */}
+            <Link
+              href="/track-order"
+              className="transition-all py-2 px-1 font-medium text-gray-700 hover:text-gray-900"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {t("Track Order")}
             </Link>
           </div>
         )}

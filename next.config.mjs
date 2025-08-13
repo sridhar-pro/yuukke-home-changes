@@ -127,6 +127,10 @@ const nextConfig = {
         source: "/api/applyCoupon",
         destination: `${BASE_API}/applyCoupon`,
       },
+      {
+        source: "/api/orderTracking",
+        destination: `${BASE_API}/orderTracking`,
+      },
 
       // 🔐 These remain constant — always live
       {
