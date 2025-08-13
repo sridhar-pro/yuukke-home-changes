@@ -205,6 +205,7 @@ export default function CheckoutPage({ formData }) {
           const keysToRemove = [
             "cart_tax_details",
             "cart_data",
+            "cart_id",
             "order_id_data",
             "cart_shipping_details",
           ];

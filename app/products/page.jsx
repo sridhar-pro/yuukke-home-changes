@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { containerVariants, itemVariants } from "../utils/variants";
 import {
   ChevronDown,
-  Grid3X3,
-  List,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -15,15 +13,13 @@ import {
   Heart,
   IndianRupee,
   PackageCheck,
-  Wallet,
-  SlidersHorizontal,
   Filter,
   X,
   Circle,
   CheckCircle2,
-  Check,
-  SlidersHorizontalIcon,
   ArrowRightCircle,
+  PackageOpen,
+  ArrowUpDown,
 } from "lucide-react";
 import { useAuth } from "../utils/AuthContext";
 import Image from "next/image";
@@ -54,6 +50,9 @@ export default function AllProductsPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
+
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showMobileSort, setShowMobileSort] = useState(false);
 
   const getImageSrc = (image) => {
     if (!image) return "/fallback.png";
@@ -218,6 +217,8 @@ export default function AllProductsPage() {
       return;
     }
 
+    const isMobile = window.innerWidth < 768; // or use a responsive hook
+
     const body = {
       filters: {
         gifts_products: "",
@@ -229,13 +230,13 @@ export default function AllProductsPage() {
           : {},
         brand: "",
         sorting: "name-asc",
-        min_price: `${priceRange[0]}`,
-        max_price: `${priceRange[1]}`,
+        min_price: "1",
+        max_price: "0",
         in_stock: inStockValue ? "1" : "0",
-        page: `${page}`,
+        page: isMobile ? "1" : `${page}`,
         sort_by_v: sortValue,
-        limit: 24,
-        offset: `${(page - 1) * 24}`,
+        limit: isMobile ? "100" : "24",
+        offset: isMobile ? "0" : `${(page - 1) * 24}`,
       },
     };
 
@@ -326,6 +327,481 @@ export default function AllProductsPage() {
 
   return (
     <div className="min-h-screen">
+      {/* mobile devices */}
+      <div className="block md:hidden">
+        {/* Mobile Action Buttons - Only visible on mobile */}
+        <div className="lg:hidden fixed bottom-16 left-0 right-0 z-50">
+          <div className="flex w-full">
+            {/* Filter Button - Full width */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowMobileFilters(true)}
+              className="bg-white shadow-lg px-4 py-3 flex items-center justify-center gap-2 border-t border-gray-200 flex-1 relative"
+            >
+              <Filter className="w-4 h-4" />
+              <span className="text-sm font-medium">Filters</span>
+              {(selectedCategory || inStock || priceRange !== 100000) && (
+                <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+              )}
+              {/* Black separator line */}
+              <div className="absolute right-0 top-0 bottom-0 w-px bg-black"></div>
+            </motion.button>
+
+            {/* Sort Button - Full width */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowMobileSort(true)}
+              className="bg-white shadow-lg px-4 py-3 flex items-center justify-center gap-2 border-t border-gray-200 flex-1"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              <span className="text-sm font-medium">Sort</span>
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Mobile Filter Drawer */}
+        <AnimatePresence>
+          {showMobileFilters && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden bottom-16"
+              onClick={() => setShowMobileFilters(false)}
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 30 }}
+                className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  {/* Clear Filters Header */}
+                  <div className="flex flex-col border-b border-gray-200 pb-3">
+                    {/* Filters heading + Selected category badge */}
+                    <div className="flex items-center justify-between">
+                      {/* Filters heading */}
+                      <div className="flex items-center gap-2 text-gray-800 font-semibold text-sm sm:text-base">
+                        <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                        <span>Filters</span>
+                      </div>
+
+                      {/* Selected Category Badge - Hidden on mobile if too long */}
+                      {(selectedCategory ||
+                        selectedSubcategory ||
+                        selectedSubSubcategory) && (
+                        <div className="hidden sm:flex items-center gap-1">
+                          {selectedCategory && (
+                            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-xs sm:text-sm font-medium truncate max-w-[10rem] sm:max-w-[15rem]">
+                              {getCategoryName(selectedCategory)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mobile-only selected category (simplified) */}
+                    {(selectedCategory ||
+                      selectedSubcategory ||
+                      selectedSubSubcategory) && (
+                      <div className="sm:hidden flex items-center gap-1 mt-1">
+                        {selectedCategory && (
+                          <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-xs font-medium truncate max-w-[80vw]">
+                            {getCategoryName(selectedCategory)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Clear Filters Button */}
+                    <AnimatePresence mode="wait">
+                      {(selectedCategory ||
+                        selectedSubcategory ||
+                        selectedSubSubcategory ||
+                        inStock ||
+                        priceRange !== 100000) && (
+                        <motion.button
+                          key="clear-filters"
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          transition={{ duration: 0.2 }}
+                          onClick={() => {
+                            setSelectedCategory(null);
+                            setSelectedSubcategory(null);
+                            setSelectedSubSubcategory(null);
+                            setInStock(false);
+                            setPriceRange(100000);
+                            fetchProductsByCategory(null, null, null);
+                          }}
+                          className="flex items-center gap-1 mt-2 text-sm sm:text-base text-gray-500 hover:text-gray-700 transition-colors w-full sm:w-auto"
+                        >
+                          <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span>Clear all filters</span>
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <button onClick={() => setShowMobileFilters(false)}>
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Include your existing filter content here */}
+                <div className="space-y-6">
+                  {/* Availability */}
+                  <div className="space-y-3 border-b border-gray-200 pb-4">
+                    {/* Availability */}
+                    <div className="space-y-3 border- border-gray-200 b pb-4">
+                      <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+                        <PackageCheck className="w-4 h-4 text-gray-500" />
+                        Availability
+                      </div>
+
+                      <motion.label
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex items-center justify-between cursor-pointer bg-gray-50 hover:bg-gray-100 transition-all px-3 py-2 rounded-lg border border-gray-200"
+                      >
+                        <span className="text-sm font-medium text-gray-800">
+                          In Stock Only
+                        </span>
+
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={inStock}
+                            onChange={(e) => setInStock(e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-10 h-6 flex items-center bg-gray-300 rounded-full p-1 transition-all ${
+                              inStock ? "bg-emerald-500" : ""
+                            }`}
+                          >
+                            <div
+                              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${
+                                inStock ? "translate-x-4" : "translate-x-0"
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      </motion.label>
+                    </div>
+
+                    {/* Price Filter */}
+                    <div className="space-y-4 pb-0">
+                      {/* Price Filter - Redesigned */}
+                      <div className="space-y-4 border-b border-gray-200">
+                        <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+                          <Filter className="w-4 h-4 text-gray-500" />{" "}
+                          {/* Using Filter icon instead of Wallet */}
+                          Price Range
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center text-sm text-gray-700 font-medium">
+                            <span className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded">
+                              <IndianRupee className="w-3.5 h-3.5" />
+                              {priceRange.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              Max: ₹1,00,000
+                            </span>
+                          </div>
+
+                          <input
+                            type="range"
+                            min="0"
+                            max="100000"
+                            step="100"
+                            value={priceRange}
+                            onChange={(e) =>
+                              setPriceRange(Number(e.target.value))
+                            }
+                            className="w-full h-1.5 bg-gray-300 rounded-full appearance-none cursor-pointer 
+        [&::-webkit-slider-thumb]:appearance-none
+        [&::-webkit-slider-thumb]:h-4
+        [&::-webkit-slider-thumb]:w-4
+        [&::-webkit-slider-thumb]:rounded-full
+        [&::-webkit-slider-thumb]:bg-gray-700
+        [&::-webkit-slider-thumb]:border-2
+        [&::-webkit-slider-thumb]:border-white
+        [&::-webkit-slider-thumb]:shadow-sm"
+                          />
+
+                          {/* <div className="flex justify-between text-xs text-gray-500">
+                    <span>₹0</span>
+                    <span>₹1L</span>
+                  </div> */}
+                        </div>
+
+                        <motion.button
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() =>
+                            fetchProductsByCategory(
+                              selectedCategory,
+                              selectedSubcategory,
+                              selectedSubSubcategory,
+                              currentPage,
+                              sortBy,
+                              inStock,
+                              [0, priceRange]
+                            )
+                          }
+                          className=""
+                        ></motion.button>
+                      </div>
+                    </div>
+
+                    {/* Categories */}
+                    <div className="space-y-0">
+                      {/* Categories Section */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className="p-2"
+                      >
+                        <div className="flex items-center gap-3 mb-6">
+                          <h3 className="text-lg font-bold text-black uppercase tracking-wide">
+                            Categories
+                          </h3>
+                        </div>
+
+                        <div className="space-y-3">
+                          {loadingCategories
+                            ? [...Array(6)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="h-5 w-2/3 rounded bg-gray-200 animate-pulse"
+                                />
+                              ))
+                            : categories.map((cat, index) => {
+                                const isSelected = selectedCategory === cat.id;
+                                return (
+                                  <motion.div
+                                    key={cat.id}
+                                    layout
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={{
+                                      duration: 0.4,
+                                      delay: index * 0.05,
+                                    }}
+                                  >
+                                    <motion.button
+                                      whileHover={{ scale: 1.02 }}
+                                      whileTap={{ scale: 0.98 }}
+                                      onClick={() => {
+                                        const isCatSelected =
+                                          selectedCategory === cat.id;
+                                        setSelectedCategory(
+                                          isCatSelected ? null : cat.id
+                                        );
+                                        setSelectedSubcategory(null);
+                                        setSelectedSubSubcategory(null);
+                                        fetchProductsByCategory(
+                                          isCatSelected ? null : cat.id,
+                                          null,
+                                          null
+                                        );
+                                      }}
+                                      className={`flex items-center justify-between w-full px-1 py-1 text-sm font-medium transition-colors duration-300 group ${
+                                        isSelected
+                                          ? "text-black font-semibold"
+                                          : "text-gray-600 hover:text-black"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div
+                                          className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                                            isSelected
+                                              ? "bg-black"
+                                              : "bg-gray-400 group-hover:bg-black"
+                                          }`}
+                                        />
+                                        <span>{cat.name}</span>
+                                      </div>
+                                      {cat.subcategories?.length > 0 && (
+                                        <ChevronDown
+                                          className={`w-4 h-4 transition-transform ${
+                                            isSelected
+                                              ? "rotate-180 text-black"
+                                              : "text-gray-400"
+                                          }`}
+                                        />
+                                      )}
+                                    </motion.button>
+
+                                    <AnimatePresence>
+                                      {isSelected &&
+                                        cat.subcategories?.length > 0 && (
+                                          <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{
+                                              opacity: 1,
+                                              height: "auto",
+                                            }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="ml-4 mt-1 space-y-3"
+                                          >
+                                            {cat.subcategories.map(
+                                              (sub, subIndex) => {
+                                                const isSubSelected =
+                                                  selectedSubcategory ===
+                                                  sub.id;
+                                                return (
+                                                  <motion.button
+                                                    key={sub.id}
+                                                    initial={{
+                                                      opacity: 0,
+                                                      x: -5,
+                                                    }}
+                                                    animate={{
+                                                      opacity: 1,
+                                                      x: 0,
+                                                    }}
+                                                    transition={{
+                                                      delay: subIndex * 0.03,
+                                                    }}
+                                                    onClick={() => {
+                                                      const isSubSelected =
+                                                        selectedSubcategory ===
+                                                        sub.id;
+                                                      setSelectedSubcategory(
+                                                        isSubSelected
+                                                          ? null
+                                                          : sub.id
+                                                      );
+                                                      setSelectedSubSubcategory(
+                                                        null
+                                                      );
+                                                      fetchProductsByCategory(
+                                                        selectedCategory,
+                                                        isSubSelected
+                                                          ? null
+                                                          : sub.id,
+                                                        null
+                                                      );
+                                                    }}
+                                                    className={`flex items-center gap-2 w-full text-left text-sm transition-colors duration-200 ${
+                                                      isSubSelected
+                                                        ? "text-black font-medium"
+                                                        : "text-gray-500 hover:text-black"
+                                                    }`}
+                                                  >
+                                                    {isSubSelected ? (
+                                                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                                    ) : (
+                                                      <Circle className="w-4 h-4 text-gray-300" />
+                                                    )}
+                                                    {sub.name}
+                                                    {sub.sub_subcategories
+                                                      ?.length > 0 && (
+                                                      <ChevronDown
+                                                        className={`w-3 h-3 ml-auto ${
+                                                          isSubSelected
+                                                            ? "rotate-180 text-black"
+                                                            : "text-gray-400"
+                                                        }`}
+                                                      />
+                                                    )}
+                                                  </motion.button>
+                                                );
+                                              }
+                                            )}
+                                          </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                  </motion.div>
+                                );
+                              })}
+                        </div>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sticky bottom-0  pt-4">
+                  <button
+                    onClick={() => {
+                      fetchProductsByCategory(
+                        selectedCategory,
+                        selectedSubcategory,
+                        selectedSubSubcategory,
+                        currentPage,
+                        sortBy,
+                        inStock,
+                        [0, priceRange]
+                      );
+                      setShowMobileFilters(false);
+                    }}
+                    className="w-full bg-black text-white py-3 rounded-lg font-medium"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Mobile Sort Drawer */}
+        <AnimatePresence>
+          {showMobileSort && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden bottom-16"
+              onClick={() => setShowMobileSort(false)}
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 30 }}
+                className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 max-h-[70vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-bold">Sort By</h3>
+                  <button onClick={() => setShowMobileSort(false)}>
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSortBy(option.value);
+                        setShowMobileSort(false);
+                      }}
+                      className={`w-full text-left p-3 rounded-lg ${
+                        option.value === sortBy
+                          ? "bg-gray-100 font-medium"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <div className="px-4 sm:px-6 py-6 sm:py-8">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Sidebar - Stacked on top for mobile */}
@@ -333,7 +809,7 @@ export default function AllProductsPage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full lg:w-80"
+            className="hidden lg:block w-full lg:w-80"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -342,16 +818,20 @@ export default function AllProductsPage() {
               className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5 space-y-6"
             >
               {/* Clear Filters Header */}
-              <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-                <div className="flex items-center gap-2 text-gray-800 font-semibold text-sm">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <span>Filters</span>
+              <div className="flex flex-col border-b border-gray-200 pb-3">
+                {/* Filters heading + Selected category badge */}
+                <div className="flex items-center justify-between">
+                  {/* Filters heading */}
+                  <div className="flex items-center gap-2 text-gray-800 font-semibold text-sm">
+                    <Filter className="w-4 h-4 text-gray-500" />
+                    <span>Filters</span>
+                  </div>
 
                   {/* Selected Category Badge */}
                   {(selectedCategory ||
                     selectedSubcategory ||
                     selectedSubSubcategory) && (
-                    <div className="flex items-center gap-1 ml-2">
+                    <div className="flex items-center gap-1">
                       {selectedCategory && (
                         <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-medium truncate max-w-[10rem]">
                           {getCategoryName(selectedCategory)}
@@ -361,31 +841,34 @@ export default function AllProductsPage() {
                   )}
                 </div>
 
-                {/* Clear Filters Button - Improved */}
-                {(selectedCategory ||
-                  selectedSubcategory ||
-                  selectedSubSubcategory ||
-                  inStock ||
-                  priceRange !== 100000) && (
-                  <motion.button
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setSelectedSubcategory(null);
-                      setSelectedSubSubcategory(null);
-                      setInStock(false);
-                      setPriceRange(100000); // Reset to max range instead of 0
-                      fetchProductsByCategory(null, null, null);
-                    }}
-                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                    <span>Clear filters</span>
-                  </motion.button>
-                )}
+                {/* Clear Filters Button */}
+                <AnimatePresence mode="wait">
+                  {(selectedCategory ||
+                    selectedSubcategory ||
+                    selectedSubSubcategory ||
+                    inStock ||
+                    priceRange !== 100000) && (
+                    <motion.button
+                      key="clear-filters"
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ duration: 0.2 }}
+                      onClick={() => {
+                        setSelectedCategory(null);
+                        setSelectedSubcategory(null);
+                        setSelectedSubSubcategory(null);
+                        setInStock(false);
+                        setPriceRange(100000);
+                        fetchProductsByCategory(null, null, null);
+                      }}
+                      className="flex items-center gap-1 mt-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Clear filters</span>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Availability */}
@@ -643,7 +1126,10 @@ export default function AllProductsPage() {
             {/* Top Controls */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6 sm:mb-8">
               {/* Sort Dropdown */}
-              <div className="relative w-full sm:w-52" ref={dropdownRef}>
+              <div
+                className="relative w-full sm:w-52 hidden lg:block"
+                ref={dropdownRef}
+              >
                 <button
                   onClick={() => setIsOpen(!isOpen)}
                   className="w-full rounded-xl border border-gray-200 bg-white/90 backdrop-blur-md py-2 px-4 pr-10 text-left shadow-sm hover:shadow-md transition-all duration-200 ease-in-out focus:ring-1 focus:ring-[#A00300]/30 focus:border-[#A00300] text-xs sm:text-sm font-medium text-gray-800 flex items-center justify-between"
@@ -679,7 +1165,7 @@ export default function AllProductsPage() {
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-center sm:justify-end gap-1.5 py-3 w-full sm:w-auto">
+              <div className="hidden lg:flex items-center justify-center sm:justify-end gap-1.5 py-3 w-full sm:w-auto">
                 {/* First Page */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -835,27 +1321,29 @@ export default function AllProductsPage() {
                           {product.promo_price &&
                           product.end_date &&
                           new Date(product.end_date) > new Date() ? (
-                            <div className="flex items-center justify-between w-full">
-                              {/* Prices */}
-                              <div className="flex items-baseline gap-1.5 md:gap-2">
-                                <p className="text-sm md:text-lg font-bold">
-                                  ₹{Number(product.promo_price).toFixed(2)}
-                                </p>
-                                <p className="text-xs md:text-sm text-gray-400 line-through">
-                                  ₹{Number(product.price).toFixed(2)}
-                                </p>
-                              </div>
+                            <div className="flex justify-between w-full">
+                              {/* Prices + OFF Tag stacked */}
+                              <div className="flex flex-col">
+                                <div className="flex items-baseline gap-1.5 md:gap-2 text-[#a00030]">
+                                  <p className="text-sm md:text-lg font-bold">
+                                    ₹{Number(product.promo_price).toFixed(2)}
+                                  </p>
+                                  <p className="text-xs md:text-sm text-gray-400 line-through">
+                                    ₹{Number(product.price).toFixed(2)}
+                                  </p>
+                                </div>
 
-                              {/* OFF Tag */}
-                              <span className="text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg ml-2 whitespace-nowrap">
-                                {Math.round(
-                                  ((Number(product.price) -
-                                    Number(product.promo_price)) /
-                                    Number(product.price)) *
-                                    100
-                                )}
-                                % OFF
-                              </span>
+                                {/* OFF Tag below prices */}
+                                <span className="mt-1 text-[10px] md:text-xs font-bold text-red-600 bg-transparent md:bg-green-100 px-1.5 md:px-2 py-[1px] md:py-0.5 rounded-lg w-fit">
+                                  {Math.round(
+                                    ((Number(product.price) -
+                                      Number(product.promo_price)) /
+                                      Number(product.price)) *
+                                      100
+                                  )}
+                                  % OFF
+                                </span>
+                              </div>
                             </div>
                           ) : (
                             <p className="text-sm md:text-lg font-bold text-gray-900">
@@ -870,9 +1358,20 @@ export default function AllProductsPage() {
               </motion.div>
             ) : hasLoadedOnce ? (
               // ❌ Show "No products" only AFTER first fetch
-              <div className="text-center text-gray-500 p-6 sm:p-10">
-                No products found!
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center justify-center p-10 text-center"
+              >
+                <div className="bg-gray-100 rounded-full p-4 mb-4 shadow-inner">
+                  <PackageOpen className="w-10 h-10 text-gray-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-700">
+                  No Products Found
+                </h2>
+              </motion.div>
             ) : null}
           </motion.main>
         </div>

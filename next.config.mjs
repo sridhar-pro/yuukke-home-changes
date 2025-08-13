@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 // 🟢 Toggle this to `true` when testing!
-const IS_TEST = true;
+const IS_TEST = false;
 
 // 🔗 API endpoints
 const TEST_API = "https://marketplace.betalearnings.com/api/v1/Marketv2";

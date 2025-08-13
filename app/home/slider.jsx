@@ -14,7 +14,7 @@ export function ImagesSliderDemo() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // default immediately
   const [loading, setLoading] = useState(true);
   const hasFetched = useRef(false);
-  const baseUrl = `https://marketplace.betalearnings.com/assets/uploads/`;
+  const baseUrl = `https://marketplace.yuukke.com/assets/uploads/`;
 
   const staticMobileLinks = [
     "https://marketplace.yuukke.com/shop/deal",

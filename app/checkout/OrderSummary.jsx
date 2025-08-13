@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "../utils/AuthContext";
 
 const OrderSummary = () => {
+  const { getValidToken } = useAuth();
+
   const DOMAIN_KEY = process.env.NEXT_PUBLIC_DOMAIN_KEY || "yuukke";
 
   const [cartItems, setCartItems] = useState([]);
@@ -84,6 +87,83 @@ const OrderSummary = () => {
     };
   }, []);
 
+  const [code, setCode] = useState("");
+
+  const fetchWithAuth = async (url, options = {}, retry = false) => {
+    const token = await getValidToken();
+    const res = await fetch(url, {
+      method: options.method || "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    if (res.status === 401 && !retry) {
+      localStorage.removeItem("authToken");
+      return fetchWithAuth(url, options, true);
+    }
+
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return await res.json();
+  };
+
+  const [isApplied, setIsApplied] = useState(false);
+
+  const handleApply = async () => {
+    const cartId = localStorage.getItem("cart_id");
+
+    if (!cartId) {
+      console.warn("⚠️ No cart_id found in localStorage");
+      return;
+    }
+
+    if (!code.trim()) {
+      console.warn("⚠️ Please enter a discount code");
+      return;
+    }
+
+    try {
+      // 1️⃣ Apply coupon
+      const bodyData = {
+        cart_id: cartId,
+        coupon_code: code.trim(),
+      };
+
+      const applyResponse = await fetchWithAuth("/api/applyCoupon", {
+        method: "POST",
+        body: bodyData,
+      });
+
+      console.log("🎉 Coupon applied response:", applyResponse);
+
+      // ✅ Show "Applied" blast
+      setIsApplied(true);
+      setTimeout(() => setIsApplied(false), 3000); // Optional fade reset
+
+      // 2️⃣ Fetch updated tax details
+      const taxResponse = await fetchWithAuth("/api/getTax", {
+        method: "POST",
+        body: { cart_id: cartId },
+      });
+
+      console.log("💰 Updated tax details:", taxResponse);
+
+      // 3️⃣ Update localStorage with new tax details
+      localStorage.setItem("cart_tax_details", JSON.stringify(taxResponse));
+
+      // 4️⃣ Trigger UI update instantly
+      window.dispatchEvent(
+        new CustomEvent("local-storage-update", {
+          detail: { key: "cart_tax_details" },
+        })
+      );
+    } catch (error) {
+      console.error("❌ Error applying coupon or fetching tax:", error);
+    }
+  };
+
   const getImageSrc = (image) => {
     if (!image) return "/fallback.png";
     if (image.startsWith("http") || image.startsWith("/")) return image;
@@ -119,15 +199,32 @@ const OrderSummary = () => {
         ))}
 
         {/* 🎁 Discount Input */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <input
             type="text"
-            placeholder="Discount code or gift card"
+            placeholder="Discount code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
             className="input flex-1 bg-white"
           />
-          <button className="bg-gray-200 text-sm text-gray-600 font-bold px-4 rounded-md">
-            Apply
-          </button>
+
+          <div className="flex flex-col items-center relative">
+            <button
+              onClick={handleApply}
+              disabled={isApplied}
+              className={`bg-gray-200 text-sm font-bold p-4 rounded-md relative z-10 transition-all duration-200 ${
+                isApplied ? "text-green-600" : "text-gray-600"
+              }`}
+            >
+              {isApplied ? "Applied" : "Apply"}
+            </button>
+
+            {isApplied && (
+              <span className="mt-1 text-xs text-green-600 font-medium">
+                Coupon Applied
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 📦 Summary */}
